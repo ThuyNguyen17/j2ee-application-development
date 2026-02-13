@@ -1,0 +1,93 @@
+.timetable-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.timetable-header {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.timetable-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.timetable-grid {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+}
+
+.timetable-grid th,
+.timetable-grid td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.timetable-grid th {
+    background-color: #007bff;
+    color: white;
+    font-weight: 600;
+}
+
+.timetable-grid td {
+    height: 80px;
+    /* Fixed height for cells */
+    vertical-align: top;
+    position: relative;
+}
+
+.timetable-grid tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.timetable-grid tr:hover {
+    background-color: #ddd;
+}
+
+.period-cell {
+    background-color: #e9ecef;
+    font-weight: bold;
+    width: 80px;
+}
+
+.subject-info {
+    font-weight: bold;
+    color: #0056b3;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.class-info {
+    font-size: 12px;
+    color: #555;
+    display: block;
+}
+
+.room-info {
+    font-size: 12px;
+    color: #d9534f;
+    font-weight: bold;
+    display: block;
+}
+
+.empty-cell {
+    background-color: #fafafa;
+}
+
+.note-info {
+    font-size: 11px;
+    color: #d9534f;
+    font-style: italic;
+    margin-top: 4px;
+    display: block;
+}
