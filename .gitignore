@@ -1,0 +1,36 @@
+### ======================
+### BACKEND (Spring Boot)
+### ======================
+
+backend/target/
+backend/*.log
+
+# Maven wrapper (KHÔNG ignore toàn bộ .mvn)
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ
+backend/.idea/
+backend/*.iml
+
+### ======================
+### FRONTEND (React)
+### ======================
+
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.cache/
+
+### ======================
+### IDE & SYSTEM
+### ======================
+
+.idea/
+.vscode/
+*.iws
+*.iml
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
