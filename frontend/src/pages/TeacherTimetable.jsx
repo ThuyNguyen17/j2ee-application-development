@@ -1,92 +1,170 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { getTeacherTimetable } from "../api/timetableApi";
 import { PERIODS, DAYS } from "../utils/timetableConstants";
-import "./TimetableGrid.css";
+import {
+  getCurrentAcademicInfo,
+  getCurrentWeek,
+  getSemestersForYear,
+  generateWeeksForSemester,
+} from "../utils/academicUtils";
+import TimetableGrid from "../components/timetable/TimetableGrid";
+import TimetableControls from "../components/timetable/TimetableControls";
+import TimetablePagination from "../components/timetable/TimetablePagination";
+import ScheduleCell from "../components/timetable/ScheduleCell";
 
 function TeacherTimetable() {
+  const currentAcademicInfo = getCurrentAcademicInfo();
+  const currentWeekNum = getCurrentWeek(
+    currentAcademicInfo.semester,
+    currentAcademicInfo.academicYear
+  );
+
   const [timetable, setTimetable] = useState([]);
-  const [week, setWeek] = useState(3); // Default week
-  const teacherId = "T001"; // Hardcoded for now
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState(
+    currentAcademicInfo.academicYear
+  );
+  const [selectedSemester, setSelectedSemester] = useState(
+    currentAcademicInfo.semester || 1
+  );
+  const [selectedWeek, setSelectedWeek] = useState(currentWeekNum);
+  const [loading, setLoading] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState(null);
+
+
+
+  const teacherId = "T001";
+
+  const semesterOptions = getSemestersForYear(currentAcademicInfo.academicYear);
+  const weekOptions = generateWeeksForSemester(
+    selectedSemester,
+    selectedAcademicYear
+  );
 
   useEffect(() => {
-    fetchData();
-  }, [week]);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await getTeacherTimetable(
+          teacherId,
+          selectedWeek,
+          selectedAcademicYear,
+          selectedSemester
+        );
+        console.log("Fetched timetable:", data);
+        setTimetable(data);
+        setLastUpdate(new Date());
+      } catch (error) {
+        console.error("Error fetching timetable:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchData = async () => {
-    try {
-      const data = await getTeacherTimetable(teacherId, week);
-      console.log("Fetched timetable:", data);
-      setTimetable(data);
-    } catch (error) {
-      console.error("Error fetching timetable:", error);
-    }
+    fetchData();
+  }, [teacherId, selectedWeek, selectedSemester, selectedAcademicYear]);
+
+  useEffect(() => {
+    const checkAcademicYear = () => {
+      const latestInfo = getCurrentAcademicInfo();
+
+      if (latestInfo.academicYear !== selectedAcademicYear) {
+        setSelectedAcademicYear(latestInfo.academicYear);
+        setSelectedSemester(latestInfo.semester || 1);
+        const newWeek = getCurrentWeek(latestInfo.semester, latestInfo.academicYear);
+        setSelectedWeek(newWeek);
+      }
+    };
+
+    const dailyCheck = setInterval(checkAcademicYear, 24 * 60 * 60 * 1000);
+
+    return () => clearInterval(dailyCheck);
+  }, [selectedAcademicYear]);
+
+  const getScheduleForCell = useCallback((dayKey, periodId) => {
+    return timetable.find(
+      (item) => item.dayOfWeek === dayKey && item.period === periodId
+    );
+  }, [timetable]);
+
+  const handleFirstWeek = () => setSelectedWeek(1);
+  const handlePreviousWeek = () => {
+    if (selectedWeek > 1) setSelectedWeek(selectedWeek - 1);
+  };
+  const handleNextWeek = () => {
+    if (selectedWeek < weekOptions.length) setSelectedWeek(selectedWeek + 1);
+  };
+  const handleLastWeek = () => setSelectedWeek(weekOptions.length);
+
+  const handleYearSemesterChange = (e) => {
+    const [year, sem] = e.target.value.split('-');
+    setSelectedAcademicYear(parseInt(year));
+    setSelectedSemester(parseInt(sem));
+    setSelectedWeek(1);
   };
 
-  const getScheduleForCell = (day, period) => {
-    return timetable.find(
-      (item) => item.dayOfWeek === day && item.period === period
+  const handleWeekChange = (e) => setSelectedWeek(parseInt(e.target.value));
+
+  const renderCellContent = (day, period) => {
+    const schedule = getScheduleForCell(day.key, period.id);
+    if (!schedule) return null;
+
+    return (
+      <ScheduleCell
+        subject={schedule.subject}
+        studentClass={schedule.className}
+        room={schedule.room}
+        note={schedule.note}
+      />
     );
+  };
+
+  const getCellClassName = (content) => {
+    return content ? "active-cell" : "empty-cell";
   };
 
   return (
     <div className="timetable-container">
-      <div className="timetable-header">
-        <h2>Lịch dạy Giảng viên</h2>
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="loading-overlay">
+          <div className="loading-spinner"></div>
+        </div>
+      )}
+
+      {/* Controls Section */}
+      <TimetableControls
+        options={{ semesterOptions, weekOptions }}
+        values={{ selectedAcademicYear, selectedSemester, selectedWeek }}
+        onChange={{
+          onYearSemesterChange: handleYearSemesterChange,
+          onWeekChange: handleWeekChange
+        }}
+        onPrint={() => window.print()}
+      />
+
+      {/* Info Text */}
+      <div className="info-text">
+        ( Lưu ý: Tuần {selectedWeek} tương ứng với tuần {selectedWeek} của học kỳ {selectedSemester},
+        năm học {selectedAcademicYear}-{selectedAcademicYear + 1} )
       </div>
 
-      <div className="timetable-controls">
-        <label>
-          Chọn tuần:{" "}
-          <input
-            type="number"
-            value={week}
-            onChange={(e) => setWeek(parseInt(e.target.value))}
-            min="1"
-            max="52"
-          />
-        </label>
-        <button onClick={fetchData}>Xem Lịch</button>
-      </div>
+      {/* Timetable Grid */}
+      <TimetableGrid
+        periods={PERIODS}
+        days={DAYS}
+        renderCellContent={renderCellContent}
+        getCellClassName={getCellClassName}
+      />
 
-      <table className="timetable-grid">
-        <thead>
-          <tr>
-            <th className="period-header">Tiết / Thứ</th>
-            {DAYS.map((day) => (
-              <th key={day.key}>{day.label}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {PERIODS.map((period) => (
-            <tr key={period.id}>
-              <td className="period-cell">
-                <div>Tiết {period.id}</div>
-                <div style={{ fontSize: "0.8em", color: "#666" }}>
-                  ({period.start})
-                </div>
-              </td>
-              {DAYS.map((day) => {
-                const schedule = getScheduleForCell(day.key, period.id);
-                return (
-                  <td key={`${day.key}-${period.id}`} className={schedule ? "active-cell" : "empty-cell"}>
-                    {schedule ? (
-                      <div className="schedule-content">
-                        <span className="subject-info">{schedule.subject}</span>
-                        <span className="class-info">Lớp: {schedule.className}</span>
-                        <span className="room-info">Phòng: {schedule.room}</span>
-                        {schedule.note && <span className="note-info">{schedule.note}</span>}
-                      </div>
-                    ) : (
-                      ""
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Footer Buttons */}
+      <TimetablePagination
+        selectedWeek={selectedWeek}
+        totalWeeks={weekOptions.length}
+        onFirstWeek={handleFirstWeek}
+        onPreviousWeek={handlePreviousWeek}
+        onNextWeek={handleNextWeek}
+        onLastWeek={handleLastWeek}
+      />
     </div>
   );
 }

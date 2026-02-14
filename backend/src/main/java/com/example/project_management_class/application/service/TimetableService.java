@@ -4,5 +4,5 @@ import com.example.project_management_class.application.dto.TimetableResponseDTO
 import java.util.List;
 
 public interface TimetableService {
-    List<TimetableResponseDTO> getTeacherTimetable(String teacherId, int week);
+    List<TimetableResponseDTO> getTeacherTimetable(String teacherId, int week, int academicYear, int semester);
 }

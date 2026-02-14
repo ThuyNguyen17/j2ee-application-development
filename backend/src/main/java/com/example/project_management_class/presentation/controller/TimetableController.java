@@ -16,7 +16,11 @@ public class TimetableController {
     private final TimetableService timetableService;
 
     @GetMapping("/{teacherId}/timetable")
-    public List<TimetableResponseDTO> getTeacherTimetable(@PathVariable String teacherId, @RequestParam int week) {
-        return timetableService.getTeacherTimetable(teacherId, week);
+    public List<TimetableResponseDTO> getTeacherTimetable(
+            @PathVariable String teacherId, 
+            @RequestParam int week,
+            @RequestParam int year,
+            @RequestParam int semester) {
+        return timetableService.getTeacherTimetable(teacherId, week, year, semester);
     }
 }

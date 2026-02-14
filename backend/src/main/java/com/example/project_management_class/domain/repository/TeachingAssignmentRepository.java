@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface TeachingAssignmentRepository extends MongoRepository<TeachingAssignment, String> {
     List<TeachingAssignment> findByTeacherId(String teacherId);
+    List<TeachingAssignment> findByTeacherIdAndAcademicYearAndSemester(String teacherId, int academicYear, int semester);
 }
