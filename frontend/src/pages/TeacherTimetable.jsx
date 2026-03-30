@@ -1,4 +1,7 @@
+
+
 import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { getTeacherTimetable } from "../api/timetableApi";
 import { PERIODS, DAYS } from "../utils/timetableConstants";
 import {
@@ -11,8 +14,10 @@ import TimetableGrid from "../components/timetable/TimetableGrid";
 import TimetableControls from "../components/timetable/TimetableControls";
 import TimetablePagination from "../components/timetable/TimetablePagination";
 import ScheduleCell from "../components/timetable/ScheduleCell";
+import AttendanceModal from "../components/attendance/AttendanceModal";
 
 function TeacherTimetable() {
+  const navigate = useNavigate();
   const currentAcademicInfo = getCurrentAcademicInfo();
   const currentWeekNum = getCurrentWeek(
     currentAcademicInfo.semester,
@@ -30,10 +35,15 @@ function TeacherTimetable() {
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
 
+  // Attendance states
+  const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
+  const [attendanceData, setAttendanceData] = useState(null);
 
 
-  const teacherId = "T001";
+  const [teacher, setTeacher] = useState(null);
+  const teacherId = teacher?.teacherId || "";
 
+  // Only show the current academic year's semesters (HK1/HK2).
   const semesterOptions = getSemestersForYear(currentAcademicInfo.academicYear);
   const weekOptions = generateWeeksForSemester(
     selectedSemester,
@@ -41,6 +51,38 @@ function TeacherTimetable() {
   );
 
   useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      console.log("Stored User String:", storedUser);
+      if (!storedUser) {
+        navigate('/student/login');
+        return;
+      }
+      const user = JSON.parse(storedUser);
+      console.log("Parsed User Object:", user);
+      if (!user) {
+        navigate('/student/login');
+        return;
+      }
+
+      // Backend roles: STUDENT | TEACHER | ADMIN
+      if (user.role === 'STUDENT') {
+        navigate('/student/dashboard');
+        return;
+      }
+      if (user.role !== 'TEACHER') {
+        navigate('/student/login');
+        return;
+      }
+      setTeacher(user);
+    } catch (e) {
+      console.error("Error parsing user from localStorage:", e);
+      navigate('/student/login');
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!teacherId) return;
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -104,6 +146,42 @@ function TeacherTimetable() {
 
   const handleWeekChange = (e) => setSelectedWeek(parseInt(e.target.value));
 
+  const handleCellClick = (day, period) => {
+    const schedule = getScheduleForCell(day.key, period.id);
+    if (!schedule) return;
+
+    const confirmOpen = window.confirm(`Bạn muốn mở điểm danh cho lớp ${schedule.className}, tiết ${period.id}?`);
+    if (confirmOpen) {
+      // Calculate the specific date for this cell
+      const weekData = weekOptions.find(w => w.value === selectedWeek);
+      if (weekData) {
+        const cellDate = new Date(weekData.startDate);
+        // day.key is "MONDAY", "TUESDAY", etc.
+        const dayMap = { 'MONDAY': 0, 'TUESDAY': 1, 'WEDNESDAY': 2, 'THURSDAY': 3, 'FRIDAY': 4, 'SATURDAY': 5, 'SUNDAY': 6 };
+        const dayOffset = dayMap[day.key] ?? 0;
+
+        // Find the Monday of this week (or the first day of the week)
+        // In Vietnamese school, Week X starts on a specific date. 
+        // We assume weekData.startDate is the Monday of that week.
+        cellDate.setDate(cellDate.getDate() + dayOffset);
+
+        try {
+          const dateString = cellDate.toISOString().split('T')[0];
+          setAttendanceData({
+            assignmentId: schedule.teachingAssignmentId,
+            date: dateString,
+            period: period.id,
+            semester: selectedSemester,
+            className: schedule.className // Pass class name for display
+          });
+          setIsAttendanceOpen(true);
+        } catch (e) {
+          console.error("Invalid date calculation", e);
+        }
+      }
+    }
+  };
+
   const renderCellContent = (day, period) => {
     const schedule = getScheduleForCell(day.key, period.id);
     if (!schedule) return null;
@@ -154,7 +232,17 @@ function TeacherTimetable() {
         days={DAYS}
         renderCellContent={renderCellContent}
         getCellClassName={getCellClassName}
+        onCellClick={handleCellClick}
       />
+
+      {/* Attendance Modal */}
+      {attendanceData && (
+        <AttendanceModal
+          isOpen={isAttendanceOpen}
+          onClose={() => setIsAttendanceOpen(false)}
+          {...attendanceData}
+        />
+      )}
 
       {/* Footer Buttons */}
       <TimetablePagination

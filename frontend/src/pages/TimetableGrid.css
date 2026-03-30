@@ -1,4 +1,9 @@
+
 .timetable-container {
+    background-color: var(--bg-body);
+    padding: 2rem 1rem;
+    min-height: 100vh;
+    animation: fadeIn 0.5s ease-out;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     padding: 20px;
     background-color: #f9f9f9;
@@ -8,6 +13,10 @@
 
 .timetable-header {
     text-align: center;
+    color: var(--primary);
+    margin-bottom: 25px;
+    font-size: 2rem;
+    font-weight: 800;
     color: #333;
     margin-bottom: 20px;
 }
@@ -15,65 +24,117 @@
 .timetable-controls {
     display: flex;
     justify-content: space-between;
+    margin-bottom: 20px;
     margin-bottom: 15px;
     align-items: center;
+    background: var(--surface);
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
 }
 
 .timetable-grid {
     width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: var(--surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-light);
     border-collapse: collapse;
     background-color: #fff;
 }
 
 .timetable-grid th,
 .timetable-grid td {
+    border: 1px solid var(--border-light);
+    padding: 12px;
     border: 1px solid #ddd;
     padding: 8px;
     text-align: center;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
     font-size: 14px;
 }
 
 .timetable-grid th {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
     background-color: #007bff;
     color: white;
+    font-weight: 700;
+    padding: 16px 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.85rem;
     font-weight: 600;
 }
 
 .timetable-grid td {
+    height: 100px;
     height: 80px;
     /* Fixed height for cells */
     vertical-align: top;
     position: relative;
 }
 
+/* Hover effect cho d�ng */
+.timetable-grid tbody tr:hover td {
+    background-color: #f8fafc;
 .timetable-grid tr:nth-child(even) {
     background-color: #f2f2f2;
 }
 
+.timetable-grid td.active-cell {
+    background-color: #f0fdf4;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 .timetable-grid tr:hover {
     background-color: #ddd;
 }
 
+.timetable-grid td.active-cell:hover {
+    background-color: #dcfce7;
+    transform: scale(1.02);
+    box-shadow: var(--shadow-md);
+    z-index: 10;
+}
+
 .period-cell {
+    background: #f1f5f9 !important;
+    font-weight: 700;
     background-color: #e9ecef;
     font-weight: bold;
     width: 80px;
+    color: var(--text-main);
 }
 
 .subject-info {
-    font-weight: bold;
-    color: #0056b3;
+    font-weight: 800;
+    color: var(--primary);
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    font-size: 0.95rem;
 }
 
 .class-info {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: #eef2ff;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+    margin-bottom: 4px;
     font-size: 12px;
     color: #555;
     display: block;
 }
 
 .room-info {
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 700;
     font-size: 12px;
     color: #d9534f;
     font-weight: bold;
@@ -81,13 +142,19 @@
 }
 
 .empty-cell {
+    background-color: var(--surface);
     background-color: #fafafa;
 }
 
 .note-info {
+    font-size: 0.75rem;
+    color: #eab308;
     font-size: 11px;
     color: #d9534f;
     font-style: italic;
+    margin-top: 6px;
     margin-top: 4px;
     display: block;
+}
+}
 }

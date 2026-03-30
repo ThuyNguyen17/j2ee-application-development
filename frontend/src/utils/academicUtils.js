@@ -7,6 +7,14 @@
  * - Summer Break: June - August
  */
 
+// Helper to find the Monday of the week containing the date
+const getMonday = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    return new Date(d.setDate(diff));
+};
+
 // Configuration constants
 const SEMESTER_CONFIG = {
     SEMESTER_1: {
@@ -65,17 +73,12 @@ export function getCurrentWeek(semester, academicYearStart) {
     let semesterStart;
 
     if (semester === 1) {
-        // HK1 starts September 1st of academicYearStart
-        semesterStart = new Date(academicYearStart, 8, 1); // Month 8 = September (0-indexed)
+        // HK1 starts September 1st
+        semesterStart = getMonday(new Date(academicYearStart, 8, 1));
     } else if (semester === 2) {
-        // HK2 starts mid-January of the following year
-        semesterStart = new Date(
-            academicYearStart + 1,
-            0, // January
-            SEMESTER_CONFIG.SEMESTER_2.START_DAY
-        );
+        // HK2 starts mid-January
+        semesterStart = getMonday(new Date(academicYearStart + 1, 0, SEMESTER_CONFIG.SEMESTER_2.START_DAY));
     } else {
-        // Summer break or invalid semester
         return 1;
     }
 
@@ -132,13 +135,9 @@ export function generateWeeksForSemester(semester, academicYearStart) {
     let semesterStart;
 
     if (semester === 1) {
-        semesterStart = new Date(academicYearStart, 8, 1); // September 1
+        semesterStart = getMonday(new Date(academicYearStart, 8, 1));
     } else if (semester === 2) {
-        semesterStart = new Date(
-            academicYearStart + 1,
-            0,
-            SEMESTER_CONFIG.SEMESTER_2.START_DAY
-        );
+        semesterStart = getMonday(new Date(academicYearStart + 1, 0, SEMESTER_CONFIG.SEMESTER_2.START_DAY));
     } else {
         return weeks;
     }

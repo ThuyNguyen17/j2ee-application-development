@@ -1,0 +1,19 @@
+/* Admin Dashboard - Reuse Student Dashboard Styles */
+@import './StudentDashboard.css';
+
+.admin-role {
+  color: var(--muted-foreground);
+  font-size: var(--text-base);
+  margin: 0 0 var(--space-3) 0;
+}
+
+/* Admin specific adjustments */
+.admin-dashboard .profile-avatar {
+  background: var(--accent-100);
+  color: var(--accent-600);
+}
+
+.admin-dashboard .class-badge {
+  background: var(--accent-50);
+  color: var(--accent-700);
+}

@@ -1,5 +1,4 @@
 package com.example.project_management_class.domain.model;
-
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -16,6 +15,10 @@ public class AttendanceSession {
     private String teachingAssignmentId;
     private LocalDate date;
     private Integer semester;
+    private Integer period;
     private boolean open;
     private String qrToken;
+    private String previousQrToken;
+    private Double latitude;
+    private Double longitude;
 }

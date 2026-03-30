@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 @Builder
 public class TimetableResponseDTO {
+    private String teachingAssignmentId;
     private String subject;
     private String className;
     private DayOfWeek dayOfWeek;

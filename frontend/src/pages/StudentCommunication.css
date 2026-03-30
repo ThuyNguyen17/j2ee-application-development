@@ -1,0 +1,142 @@
+/* Student Communication Styles */
+.student-communication-container {
+  padding: var(--space-6);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: var(--space-6);
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--foreground);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.page-subtitle {
+  color: var(--muted-foreground);
+  font-size: var(--text-base);
+  margin: 0;
+}
+
+.loading-state {
+  text-align: center;
+  padding: var(--space-8);
+  color: var(--muted-foreground);
+}
+
+.announcements-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.announcement-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-transform);
+  border-left: 4px solid transparent;
+}
+
+.announcement-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.announcement-card.priority-high {
+  border-left-color: var(--destructive-500);
+}
+
+.announcement-card.priority-normal {
+  border-left-color: var(--primary-500);
+}
+
+.announcement-card.priority-low {
+  border-left-color: var(--success-500);
+}
+
+.announcement-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.priority-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+}
+
+.priority-indicator.priority-high {
+  background: var(--destructive-100);
+  color: var(--destructive-600);
+}
+
+.priority-indicator.priority-normal {
+  background: var(--primary-100);
+  color: var(--primary-600);
+}
+
+.priority-indicator.priority-low {
+  background: var(--success-100);
+  color: var(--success-600);
+}
+
+.announcement-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.sender {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--foreground);
+}
+
+.date {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+}
+
+.announcement-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--foreground);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.announcement-content {
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .student-communication-container {
+    padding: var(--space-4);
+  }
+  
+  .announcement-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+}

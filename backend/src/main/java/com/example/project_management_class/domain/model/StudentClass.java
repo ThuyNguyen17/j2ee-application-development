@@ -10,8 +10,11 @@ public class StudentClass {
 
     @Id
     private String id;
-
-    private String academicYearId;   // ⭐ thêm cái này
     private String studentId;
     private String classId;
+    private String academicYearId;
+    private Integer seatRow;
+    private Integer seatColumn;
+    private String notes;
 }
+

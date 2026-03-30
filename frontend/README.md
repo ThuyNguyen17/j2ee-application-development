@@ -222,4 +222,3 @@ Disabled: Desaturated colors + no interaction
 - Stacked layout
 - Full-width buttons
 - 2-column footer buttons
-

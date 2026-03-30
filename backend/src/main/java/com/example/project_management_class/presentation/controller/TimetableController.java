@@ -1,3 +1,4 @@
+
 package com.example.project_management_class.presentation.controller;
 
 import com.example.project_management_class.application.dto.TimetableResponseDTO;
@@ -8,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/teacher")
+@RequestMapping("/api/teacher")
 @RequiredArgsConstructor
 @CrossOrigin
 public class TimetableController {
@@ -17,10 +18,10 @@ public class TimetableController {
 
     @GetMapping("/{teacherId}/timetable")
     public List<TimetableResponseDTO> getTeacherTimetable(
-            @PathVariable String teacherId, 
-            @RequestParam int week,
-            @RequestParam int year,
-            @RequestParam int semester) {
+            @PathVariable("teacherId") String teacherId, 
+            @RequestParam("week") int week,
+            @RequestParam("year") int year,
+            @RequestParam("semester") int semester) {
         return timetableService.getTeacherTimetable(teacherId, week, year, semester);
     }
 }

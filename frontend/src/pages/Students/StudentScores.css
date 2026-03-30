@@ -1,0 +1,202 @@
+.student-scores-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.semester-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--color-bg-secondary);
+  border-radius: 8px;
+}
+
+.semester-selector select {
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: var(--color-bg-secondary);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px var(--color-shadow);
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--color-hover-primary);
+  border-radius: 12px;
+  color: var(--color-link-active);
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.stat-value.excellent {
+  color: #2ed573;
+}
+
+.stat-value.good {
+  color: #1e90ff;
+}
+
+.stat-value.average {
+  color: #ffa502;
+}
+
+.stat-value.poor {
+  color: #ff4757;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 16px;
+}
+
+.scores-table-container {
+  background: var(--color-bg-secondary);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px var(--color-shadow);
+}
+
+.scores-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.scores-table th,
+.scores-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-hr);
+}
+
+.scores-table th {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.scores-table td {
+  color: var(--color-text-primary);
+}
+
+.subject-name {
+  font-weight: 500;
+}
+
+.score-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.score-item {
+  padding: 4px 8px;
+  background: var(--color-bg-primary);
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.score-item small {
+  color: var(--color-text-placeholder);
+  margin-left: 4px;
+}
+
+.average {
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+.rank-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.rank-badge.excellent {
+  background: #2ed57333;
+  color: #2ed573;
+}
+
+.rank-badge.good {
+  background: #1e90ff33;
+  color: #1e90ff;
+}
+
+.rank-badge.average {
+  background: #ffa50233;
+  color: #ffa502;
+}
+
+.rank-badge.poor {
+  background: #ff475733;
+  color: #ff4757;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--color-text-placeholder);
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--color-text-secondary);
+}

@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface TimetableService {
     List<TimetableResponseDTO> getTeacherTimetable(String teacherId, int week, int academicYear, int semester);
+    List<TimetableResponseDTO> getClassTimetable(String className, int week, int academicYear, int semester);
 }

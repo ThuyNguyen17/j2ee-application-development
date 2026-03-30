@@ -5,10 +5,11 @@ const TimetableGrid = ({
     periods = [],
     days = [],
     renderCellContent,
-    getCellClassName
+    getCellClassName,
+    onCellClick // New prop
 }) => {
     return (
-        <div className="table-wrapper">
+        <div className="timetable-table-wrapper">
             <table className="timetable-grid">
                 <thead>
                     <tr>
@@ -33,6 +34,7 @@ const TimetableGrid = ({
                                     <td
                                         key={`${day.key}-${period.id}`}
                                         className={className}
+                                        onClick={() => onCellClick && onCellClick(day, period)}
                                     >
                                         {content}
                                     </td>
