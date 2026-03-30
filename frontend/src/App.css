@@ -1,0 +1,37 @@
+.container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+input {
+  margin: 10px 0;
+  padding: 8px;
+}
+
+button {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+td, th {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+
+.ok {
+  background: #e6fffa;
+}
+
+.warning {
+  background: #fff7e6;
+}
+
+.danger {
+  background: #ffe6e6;
+}

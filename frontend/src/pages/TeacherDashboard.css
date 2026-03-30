@@ -1,0 +1,19 @@
+/* Teacher Dashboard - Reuse Student Dashboard Styles */
+@import './StudentDashboard.css';
+
+.teacher-code {
+  color: var(--muted-foreground);
+  font-size: var(--text-base);
+  margin: 0 0 var(--space-3) 0;
+}
+
+/* Teacher specific adjustments */
+.teacher-dashboard .profile-avatar {
+  background: var(--secondary-100);
+  color: var(--secondary-600);
+}
+
+.teacher-dashboard .class-badge {
+  background: var(--secondary-50);
+  color: var(--secondary-700);
+}
