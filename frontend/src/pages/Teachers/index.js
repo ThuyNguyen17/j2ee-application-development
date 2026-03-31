@@ -10,6 +10,6 @@ export { default as TeacherAttendance } from './Attendance.jsx';
 export { default as TeacherAnnouncements } from './Announcement.jsx';
 export { default as TeacherEvents } from './EventCalendar.jsx';
 export { default as TeacherProfile } from './Profile.jsx';
-export { default as TeacherDashboard } from '../AdminDashboard.jsx';
+export { default as TeacherDashboard } from './Dashboard.jsx';
 export { default as TeacherNotifications } from './Notifications.jsx';
 export { default as TeacherSeatingChart } from './SeatingChart.jsx';

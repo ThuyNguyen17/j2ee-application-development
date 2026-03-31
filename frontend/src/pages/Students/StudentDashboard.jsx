@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QrCode, History, GraduationCap, User, CalendarDays, FileText, BookOpen } from 'lucide-react';
-import { normalizeClassName } from '../utils/classNameUtils';
+import { normalizeClassName } from '../../utils/classNameUtils';
 import './StudentDashboard.css';
 
 const StudentDashboard = () => {

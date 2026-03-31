@@ -1,39 +1,35 @@
 import axios from 'axios';
-
-// Sử dụng IP của server backend
-const BASE_URL = 'http://localhost:8080';
-const API_URL = `${BASE_URL}/api`;
-const API_V1_URL = `${BASE_URL}/api/v1`;
+import { BASE_URL, API_BASE_URL } from './config';
 
 // ===== CLASS APIs =====
 
 // Get all classes
 export const getAllClasses = async () => {
-    const response = await axios.get(`${API_V1_URL}/class/getall`);
+    const response = await axios.get(`${API_BASE_URL}/class/getall`);
     return response.data.classes || [];
 };
 
 // Get class by ID
 export const getClassById = async (id) => {
-    const response = await axios.get(`${API_URL}/classes/${id}`);
+    const response = await axios.get(`${BASE_URL}/api/classes/${id}`);
     return response.data;
 };
 
 // Create new class
 export const createClass = async (classData) => {
-    const response = await axios.post(`${API_V1_URL}/class`, classData);
+    const response = await axios.post(`${API_BASE_URL}/class`, classData);
     return response.data;
 };
 
 // Update class
 export const updateClass = async (id, classData) => {
-    const response = await axios.put(`${API_V1_URL}/class/${id}`, classData);
+    const response = await axios.put(`${API_BASE_URL}/class/${id}`, classData);
     return response.data;
 };
 
 // Delete class
 export const deleteClass = async (id) => {
-    const response = await axios.delete(`${API_V1_URL}/class/${id}`);
+    const response = await axios.delete(`${API_BASE_URL}/class/${id}`);
     return response.data;
 };
 
@@ -41,24 +37,34 @@ export const deleteClass = async (id) => {
 export const getClassesByTeacher = async (teacherId) => {
     try {
         // Lấy teaching assignments của giáo viên
-        const response = await axios.get(`${API_V1_URL}/teaching-assignments/teacher/${teacherId}`);
+        const response = await axios.get(`${API_BASE_URL}/teaching-assignments/teacher/${teacherId}`);
         const assignments = response.data || [];
         
         // Trích xuất danh sách lớp từ assignments
         const classNames = [...new Set(assignments.map(a => a.className))];
         
         // Lấy tất cả classes và filter theo className
-        const allClassesResponse = await axios.get(`${API_V1_URL}/class/getall`);
+        const allClassesResponse = await axios.get(`${API_BASE_URL}/class/getall`);
         const allClasses = allClassesResponse.data.classes || [];
         
         // Map className với class objects
         const teacherClasses = classNames.map(className => {
+            // Normalize className để so sánh
+            const normalizedInput = className.toString().toLowerCase().replace(/\s+/g, '');
+            
             // Tìm class object từ allClasses
-            const classObj = allClasses.find(c => 
-                c.className === className || 
-                c.name === className || 
-                (c.gradeLevel && c.className && (c.gradeLevel + c.className) === className)
-            );
+            const classObj = allClasses.find(c => {
+                // Thử nhiều cách so sánh
+                const cClassName = (c.className || '').toString().toLowerCase().replace(/\s+/g, '');
+                const cName = (c.name || '').toString().toLowerCase().replace(/\s+/g, '');
+                const cFull = (c.gradeLevel && c.className) 
+                    ? `${c.gradeLevel}${c.className}`.toLowerCase().replace(/\s+/g, '') 
+                    : '';
+                
+                return cClassName === normalizedInput 
+                    || cName === normalizedInput
+                    || cFull === normalizedInput;
+            });
             
             const assignment = assignments.find(a => a.className === className);
             
@@ -96,13 +102,13 @@ export const getClassesByTeacher = async (teacherId) => {
 
 // Get all students
 export const getAllStudents = async () => {
-    const response = await axios.get(`${API_URL}/students`);
+    const response = await axios.get(`${BASE_URL}/api/students`);
     return response.data || [];
 };
 
 // Get student by ID
 export const getStudentById = async (id) => {
-    const response = await axios.get(`${API_URL}/students/${id}`);
+    const response = await axios.get(`${BASE_URL}/api/students/${id}`);
     return response.data;
 };
 
@@ -110,11 +116,11 @@ export const getStudentById = async (id) => {
 export const getStudentsInClass = async (classId) => {
     try {
         // Lấy tất cả students
-        const allStudentsResponse = await axios.get(`${API_URL}/students`);
+        const allStudentsResponse = await axios.get(`${BASE_URL}/api/students`);
         const allStudents = allStudentsResponse.data || [];
         
         // Lấy student_classes mapping
-        const response = await axios.get(`${API_URL}/student-classes`);
+        const response = await axios.get(`${BASE_URL}/api/student-classes`);
         const studentClasses = response.data || [];
         
         // Lọc students thuộc classId
@@ -145,12 +151,12 @@ export const getStudentsInClass = async (classId) => {
 
 // Get all teachers
 export const getAllTeachers = async () => {
-    const response = await axios.get(`${API_V1_URL}/teachers/getall`);
+    const response = await axios.get(`${API_BASE_URL}/teachers/getall`);
     return response.data.teachers || [];
 };
 
 // Get teacher by ID
 export const getTeacherById = async (id) => {
-    const response = await axios.get(`${API_V1_URL}/teachers/${id}`);
+    const response = await axios.get(`${API_BASE_URL}/teachers/${id}`);
     return response.data;
 };

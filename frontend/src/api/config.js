@@ -1,22 +1,20 @@
 const getBaseUrl = () => {
-    // If we're on localhost, use localhost:8080
-    // If we're on an IP (like 192.168.x.x), use that IP:8080
     const hostname = window.location.hostname;
     
-    // Check if hostname is an IP address
-    const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
-    
+    // Local development - direct connection to backend
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
         return 'http://localhost:8080';
     }
     
-    if (isIp) {
-        return `http://${hostname}:8080`;
-    }
-
-    // Default to localhost if unsure, or you could return window.location.origin
-    return 'http://localhost:8080';
+    // For ngrok or other deployed domains - use relative path
+    // Vite proxy will forward /api to localhost:8080
+    return '';  // Empty string = relative path
 };
 
 export const BASE_URL = getBaseUrl();
-export const API_BASE_URL = `${BASE_URL}/api/v1`;
+export const API_BASE_URL = BASE_URL ? `${BASE_URL}/api/v1` : '/api/v1';
+
+// Debug logging
+console.log('Hostname:', window.location.hostname);
+console.log('BASE_URL:', BASE_URL);
+console.log('API_BASE_URL:', API_BASE_URL);

@@ -1,15 +1,9 @@
-
-
-
-
-
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
-import { recordAttendance } from '../api/attendanceApi';
+import { recordAttendance } from '../../api/attendanceApi';
 import { ArrowLeft, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
-import { normalizeClassName } from '../utils/classNameUtils';
+import { normalizeClassName } from '../../utils/classNameUtils';
 import './StudentScanner.css';
 
 const StudentScanner = () => {

@@ -6,7 +6,7 @@ import {
   Calendar,
   User
 } from "lucide-react";
-import { getAllBooks, borrowBook, searchBooks } from "../api/libraryApi";
+import { getAllBooks, borrowBook, searchBooks } from "../../api/libraryApi";
 import "./StudentLibrary.css";
 
 const StudentLibrary = () => {

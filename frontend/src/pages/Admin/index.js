@@ -1,5 +1,5 @@
 // Admin pages exports
-export { default as AdminDashboard } from './Dashboard.jsx';
+export { default as AdminDashboard } from './AdminDashboard.jsx';
 export { default as AdminLibrary } from './Library.jsx';
 export { default as AdminAnnouncements } from './Announcement.jsx';
 export { default as AdminEventCalendar } from './EventCalendar.jsx';

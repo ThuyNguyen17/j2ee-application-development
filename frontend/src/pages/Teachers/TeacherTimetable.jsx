@@ -2,19 +2,19 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { getTeacherTimetable } from "../api/timetableApi";
-import { PERIODS, DAYS } from "../utils/timetableConstants";
+import { getTeacherTimetable } from "../../api/timetableApi";
+import { PERIODS, DAYS } from "../../utils/timetableConstants";
 import {
   getCurrentAcademicInfo,
   getCurrentWeek,
   getSemestersForYear,
   generateWeeksForSemester,
-} from "../utils/academicUtils";
-import TimetableGrid from "../components/timetable/TimetableGrid";
-import TimetableControls from "../components/timetable/TimetableControls";
-import TimetablePagination from "../components/timetable/TimetablePagination";
-import ScheduleCell from "../components/timetable/ScheduleCell";
-import AttendanceModal from "../components/attendance/AttendanceModal";
+} from "../../utils/academicUtils";
+import TimetableGrid from "../../components/timetable/TimetableGrid";
+import TimetableControls from "../../components/timetable/TimetableControls";
+import TimetablePagination from "../../components/timetable/TimetablePagination";
+import ScheduleCell from "../../components/timetable/ScheduleCell";
+import AttendanceModal from "../../components/attendance/AttendanceModal";
 
 function TeacherTimetable() {
   const navigate = useNavigate();

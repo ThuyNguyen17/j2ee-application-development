@@ -1,20 +1,20 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { getClassTimetable } from "../api/timetableApi";
-import { PERIODS, DAYS } from "../utils/timetableConstants";
+import { getClassTimetable } from "../../api/timetableApi";
+import { PERIODS, DAYS } from "../../utils/timetableConstants";
 import {
   getCurrentAcademicInfo,
   getCurrentWeek,
   getSemestersForYear,
   generateWeeksForSemester,
-} from "../utils/academicUtils";
-import { normalizeClassName } from "../utils/classNameUtils";
-import TimetableGrid from "../components/timetable/TimetableGrid";
-import TimetableControls from "../components/timetable/TimetableControls";
-import TimetablePagination from "../components/timetable/TimetablePagination";
-import ScheduleCell from "../components/timetable/ScheduleCell";
+} from "../../utils/academicUtils";
+import { normalizeClassName } from "../../utils/classNameUtils";
+import TimetableGrid from "../../components/timetable/TimetableGrid";
+import TimetableControls from "../../components/timetable/TimetableControls";
+import TimetablePagination from "../../components/timetable/TimetablePagination";
+import ScheduleCell from "../../components/timetable/ScheduleCell";
 import axios from "axios";
-import { BASE_URL } from "../api/config";
+import { BASE_URL } from "../../api/config";
 
 const API_URL = `${BASE_URL}/api`;
 
@@ -90,9 +90,23 @@ export default function StudentTimetable() {
                 const studentClasses = scResp.data || [];
                 const studentClass = studentClasses.find(sc => sc.studentId === studentId || sc.studentId === studentData.id);
                 if (studentClass?.classId) {
-                  const normalized = normalizeClassName(studentClass.classId);
-                  console.log("Found className from student_classes:", normalized);
-                  setClassName(normalized);
+                  // Fetch the actual SchoolClass to get the class name (not ID)
+                  try {
+                    const classResp = await axios.get(`${API_URL}/v1/class/${studentClass.classId}`);
+                    const classData = classResp.data;
+                    // Use gradeLevel + className to form full class name like "10A1"
+                    const fullClassName = classData.gradeLevel && classData.className 
+                      ? `${classData.gradeLevel}${classData.className}`
+                      : classData.className || classData.name || studentClass.classId;
+                    const normalized = normalizeClassName(fullClassName);
+                    console.log("Found className from SchoolClass:", normalized);
+                    setClassName(normalized);
+                  } catch (classErr) {
+                    console.error("Error fetching SchoolClass:", classErr);
+                    // Fallback: try to use classId directly
+                    const normalized = normalizeClassName(studentClass.classId);
+                    setClassName(normalized);
+                  }
                 }
               } catch (scErr) {
                 console.error("Error fetching student_classes:", scErr);

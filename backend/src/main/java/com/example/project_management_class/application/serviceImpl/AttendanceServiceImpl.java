@@ -81,7 +81,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public AttendanceSession createOrGetSession(String assignmentId, LocalDate date, Integer period, Integer semester, Double latitude, Double longitude) {
-        Optional<AttendanceSession> existing = sessionRepository.findByTeachingAssignmentIdAndDateAndPeriod(assignmentId, date, period);
+        Optional<AttendanceSession> existing = sessionRepository.findFirstByTeachingAssignmentIdAndDateAndPeriod(assignmentId, date, period);
         if (existing.isPresent()) {
             AttendanceSession session = existing.get();
             if (!session.isOpen()) {
@@ -101,8 +101,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         newSession.setOpen(true);
         newSession.setLatitude(latitude);
         newSession.setLongitude(longitude);
-        // Initial token or empty
-        newSession.setQrToken("");
+        // Generate initial QR token
+        newSession.setQrToken(java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
 
         return sessionRepository.save(newSession);
     }
@@ -126,7 +126,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         // Check for existing attendance for this student in this session
-        Optional<Attendance> existing = attendanceRepository.findByAttendanceSessionIdAndStudentId(sessionId, studentId);
+        Optional<Attendance> existing = attendanceRepository.findFirstByAttendanceSessionIdAndStudentId(sessionId, studentId);
         if (existing.isPresent()) {
             throw new RuntimeException("Bạn đã điểm danh cho buổi học này rồi.");
         }

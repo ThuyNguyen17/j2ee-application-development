@@ -34,6 +34,12 @@ public class SchoolClassController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<SchoolClass> getClassById(@PathVariable String id) {
+        SchoolClass schoolClass = schoolClassService.getClassById(id);
+        return ResponseEntity.ok(schoolClass);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> deleteClass(@PathVariable String id) {
         schoolClassService.deleteClass(id);

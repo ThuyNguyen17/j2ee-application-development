@@ -6,6 +6,7 @@ import java.util.List;
 public interface SchoolClassService {
     void addClass(SchoolClass schoolClass);
     List<SchoolClass> getAllClasses();
+    SchoolClass getClassById(String id);
     void deleteClass(String id);
     SchoolClass updateClass(String id, SchoolClass schoolClass);
 }

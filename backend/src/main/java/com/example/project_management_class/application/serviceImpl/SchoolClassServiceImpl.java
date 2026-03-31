@@ -23,6 +23,12 @@ public class SchoolClassServiceImpl implements SchoolClassService {
     }
 
     @Override
+    public SchoolClass getClassById(String id) {
+        return schoolClassRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("SchoolClass not found with id: " + id));
+    }
+
+    @Override
     public void deleteClass(String id) {
         schoolClassRepository.deleteById(id);
     }

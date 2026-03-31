@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, Clock, MapPin, Users, AlertCircle, CalendarDays } from "lucide-react";
 import { getEventsForAudience } from "../../api/eventApi";
-import { BASE_URL } from "../../api/config";
 import "./StudentEvents.css";
 
 const StudentEvents = () => {

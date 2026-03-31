@@ -8,5 +8,7 @@ import java.util.Optional;
 
 public interface AttendanceSessionRepository extends MongoRepository<AttendanceSession, String> {
     Optional<AttendanceSession> findByTeachingAssignmentIdAndDateAndPeriod(String teachingAssignmentId, LocalDate date, Integer period);
+    // Use this to handle potential duplicates - returns first match
+    Optional<AttendanceSession> findFirstByTeachingAssignmentIdAndDateAndPeriod(String teachingAssignmentId, LocalDate date, Integer period);
     List<AttendanceSession> findByTeachingAssignmentId(String teachingAssignmentId);
 }

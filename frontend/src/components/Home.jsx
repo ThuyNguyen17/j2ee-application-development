@@ -12,7 +12,7 @@ const Home = () => {
     const loremText = lorem.generateParagraphs(1);
 
     const handleLoginClick = () => {
-        navigate('/student/login');
+        navigate('/login');
     };
 
     const features = [
@@ -31,16 +31,6 @@ const Home = () => {
             title: "Điểm danh Thông minh",
             description: "Hệ thống điểm danh tự động bằng mã QR"
         },
-        {
-            icon: Calendar,
-            title: "Lịch trình & Thi cử",
-            description: "Quản lý lịch học và lịch thi một cách khoa học"
-        },
-        {
-            icon: Award,
-            title: "Báo cáo Hiệu suất",
-            description: "Phân tích và báo cáo kết quả học tập chi tiết"
-        }
     ];
 
     return (

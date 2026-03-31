@@ -13,7 +13,7 @@ import {
   Filter,
   AlertCircle,
 } from "lucide-react";
-import "./AdminEvents.css";
+import "./EventCalendar.css";
 
 const BASE_URL = "http://localhost:8080";
 

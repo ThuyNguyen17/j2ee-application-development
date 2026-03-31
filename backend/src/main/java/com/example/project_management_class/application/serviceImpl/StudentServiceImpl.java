@@ -185,49 +185,80 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public List<Map<String, Object>> getStudentSubjects(String studentId) {
-        List<StudentClass> studentClasses = studentClassRepository.findByStudentId(studentId);
-        if (studentClasses.isEmpty()) return Collections.emptyList();
+        log.info("getStudentSubjects called with studentId={}", studentId);
+        try {
+            List<StudentClass> studentClasses = studentClassRepository.findByStudentId(studentId);
+            log.info("Found {} studentClasses for studentId={}", studentClasses.size(), studentId);
+            if (studentClasses.isEmpty()) return Collections.emptyList();
 
-        StudentClass sc = studentClasses.get(studentClasses.size() - 1);
-        SchoolClass schoolClass = resolveSchoolClassByIdOrName(sc.getClassId());
-        String className = null;
-        if (schoolClass != null && schoolClass.getGradeLevel() != null && schoolClass.getClassName() != null) {
-            className = ClassNameUtils.formatDisplayClassName(
-                    schoolClass.getGradeLevel(),
-                    schoolClass.getClassName()
-            );
-        } else if (sc.getClassId() != null && !sc.getClassId().isBlank()) {
-            className = ClassNameUtils.formatDisplayClassName(sc.getClassId().trim());
+            StudentClass sc = studentClasses.get(studentClasses.size() - 1);
+            log.info("Using StudentClass: id={}, classId={}", sc.getId(), sc.getClassId());
+            
+            SchoolClass schoolClass = resolveSchoolClassByIdOrName(sc.getClassId());
+            String className = null;
+            if (schoolClass != null && schoolClass.getGradeLevel() != null && schoolClass.getClassName() != null) {
+                className = ClassNameUtils.formatDisplayClassName(
+                        schoolClass.getGradeLevel(),
+                        schoolClass.getClassName()
+                );
+            } else if (sc.getClassId() != null && !sc.getClassId().isBlank()) {
+                className = ClassNameUtils.formatDisplayClassName(sc.getClassId().trim());
+            }
+            log.info("Resolved className={}", className);
+            if (className == null || className.isBlank()) return Collections.emptyList();
+
+            final String studentClassKey = ClassNameUtils.normalizeToKey(className);
+            log.info("studentClassKey={}", studentClassKey);
+            
+            // Check if repository is available
+            if (teachingAssignmentRepository == null) {
+                log.error("teachingAssignmentRepository is NULL!");
+                return Collections.emptyList();
+            }
+            
+            List<TeachingAssignment> allAssignments = teachingAssignmentRepository.findAll();
+            if (allAssignments == null) {
+                log.error("teachingAssignmentRepository.findAll() returned NULL!");
+                return Collections.emptyList();
+            }
+            
+            log.info("Total assignments in DB: {}", allAssignments.size());
+            
+            List<TeachingAssignment> assignments = allAssignments.stream()
+                    .filter(a -> {
+                        if (a == null) return false;
+                        if (a.getClassName() == null) return false;
+                        String normalized = ClassNameUtils.normalizeToKey(a.getClassName());
+                        return normalized.equals(studentClassKey);
+                    })
+                    .collect(Collectors.toList());
+            log.info("Found {} assignments for classKey={}", assignments.size(), studentClassKey);
+
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (TeachingAssignment assignment : assignments) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("assignmentId", assignment.getId());
+                map.put("subjectName", assignment.getSubjectName());
+
+                Teacher teacher = teacherRepository.findById(assignment.getTeacherId()).orElse(null);
+                map.put("teacherName", teacher != null ? teacher.getFullName() : "N/A");
+
+                List<AttendanceSession> sessions = attendanceSessionRepository.findByTeachingAssignmentId(assignment.getId());
+                long totalSessions = sessions.size();
+                long attendedSessions = sessions.stream()
+                        .filter(s -> attendanceRepository.findFirstByAttendanceSessionIdAndStudentId(s.getId(), studentId).isPresent())
+                        .count();
+
+                map.put("totalSessions", totalSessions);
+                map.put("attendedSessions", attendedSessions);
+                result.add(map);
+            }
+
+            return result;
+        } catch (Exception e) {
+            log.error("Error in getStudentSubjects for studentId={}: {}", studentId, e.getMessage(), e);
+            throw e;
         }
-        if (className == null || className.isBlank()) return Collections.emptyList();
-
-        final String studentClassKey = ClassNameUtils.normalizeToKey(className);
-        List<TeachingAssignment> assignments = teachingAssignmentRepository.findAll().stream()
-                .filter(a -> a.getClassName() != null
-                        && ClassNameUtils.normalizeToKey(a.getClassName()).equals(studentClassKey))
-                .collect(Collectors.toList());
-
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (TeachingAssignment assignment : assignments) {
-            Map<String, Object> map = new HashMap<>();
-            map.put("assignmentId", assignment.getId());
-            map.put("subjectName", assignment.getSubjectName());
-
-            Teacher teacher = teacherRepository.findById(assignment.getTeacherId()).orElse(null);
-            map.put("teacherName", teacher != null ? teacher.getFullName() : "N/A");
-
-            List<AttendanceSession> sessions = attendanceSessionRepository.findByTeachingAssignmentId(assignment.getId());
-            long totalSessions = sessions.size();
-            long attendedSessions = sessions.stream()
-                    .filter(s -> attendanceRepository.findByAttendanceSessionIdAndStudentId(s.getId(), studentId).isPresent())
-                    .count();
-
-            map.put("totalSessions", totalSessions);
-            map.put("attendedSessions", attendedSessions);
-            result.add(map);
-        }
-
-        return result;
     }
 
     @Override
@@ -241,7 +272,7 @@ public class StudentServiceImpl implements StudentService {
             map.put("date", session.getDate());
             map.put("period", session.getPeriod());
 
-            Optional<Attendance> attendanceOpt = attendanceRepository.findByAttendanceSessionIdAndStudentId(session.getId(), studentId);
+            Optional<Attendance> attendanceOpt = attendanceRepository.findFirstByAttendanceSessionIdAndStudentId(session.getId(), studentId);
             if (attendanceOpt.isPresent()) {
                 Attendance attendance = attendanceOpt.get();
                 map.put("status", attendance.getStatus());

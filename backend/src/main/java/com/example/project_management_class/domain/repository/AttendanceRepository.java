@@ -9,5 +9,7 @@ public interface AttendanceRepository extends MongoRepository<Attendance, String
     List<Attendance> findByAttendanceSessionId(String sessionId);
     List<Attendance> findByStudentId(String studentId);
     Optional<Attendance> findByAttendanceSessionIdAndStudentId(String sessionId, String studentId);
+    // Use this to handle potential duplicates - returns first match
+    Optional<Attendance> findFirstByAttendanceSessionIdAndStudentId(String sessionId, String studentId);
     void deleteAllByAttendanceSessionId(String sessionId);
 }

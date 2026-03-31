@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { 
-  Users, 
-  BookOpen, 
-  School, 
   Plus, 
   Trash2, 
   Edit3, 
   Search, 
-  AlertCircle, 
   X,
   UserCheck,
   Award

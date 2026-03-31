@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/studentApi";
 import { normalizeClassName } from "../utils/classNameUtils";
-import "./StudentLogin.css";
+import "./Login.css";
 
-export default function StudentLogin() {
+export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,7 +33,13 @@ export default function StudentLogin() {
       else if (normalizedUser.role === "ADMIN") navigate("/admin/dashboard");
       else setError("Tài khoản không có quyền truy cập");
     } catch (err) {
-      setError(err.response?.data?.message || "Tài khoản hoặc mật khẩu không đúng");
+      console.error('Login error:', err);
+      console.error('Error response:', err.response);
+      console.error('Error request:', err.request);
+      const errorMsg = err.response?.data?.message 
+        || err.message 
+        || "Tài khoản hoặc mật khẩu không đúng";
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
