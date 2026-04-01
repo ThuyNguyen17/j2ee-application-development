@@ -169,6 +169,28 @@ function TeacherTimetable() {
     return baseDate.toISOString().split("T")[0]; // YYYY-MM-DD
   };
 
+  /**
+   * 📌 Danh sách các thứ với ngày chính xác
+   */
+  const displayedDays = useMemo(() => {
+    const weekData = weekOptions.find((w) => w.value === selectedWeek);
+    if (!weekData || !weekData.startDate) return DAYS;
+
+    const baseDate = new Date(weekData.startDate);
+    baseDate.setHours(12, 0, 0, 0); // Tránh lệch múi giờ khi tính toán
+    
+    return DAYS.map((day, index) => {
+      const d = new Date(baseDate);
+      d.setDate(baseDate.getDate() + index);
+      const dayStr = d.getDate().toString().padStart(2, '0');
+      const monthStr = (d.getMonth() + 1).toString().padStart(2, '0');
+      return {
+        ...day,
+        label: `${day.label} (${dayStr}/${monthStr})`
+      };
+    });
+  }, [selectedWeek, weekOptions]);
+
   // ================= CLICK CELL =================
 
   const handleCellClick = (day, period) => {
@@ -286,7 +308,7 @@ function TeacherTimetable() {
       {/* 📅 Grid */}
       <TimetableGrid
         periods={PERIODS}
-        days={DAYS}
+        days={displayedDays}
         renderCellContent={renderCellContent}
         getCellClassName={getCellClassName}
         onCellClick={handleCellClick}

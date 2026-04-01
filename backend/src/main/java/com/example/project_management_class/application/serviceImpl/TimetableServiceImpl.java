@@ -137,9 +137,9 @@ public class TimetableServiceImpl implements TimetableService {
         log.info("Found SchoolClass: id={}, gradeLevel={}, className={}, academicYearId={}", 
                 targetClass.getId(), targetClass.getGradeLevel(), targetClass.getClassName(), targetClass.getAcademicYearId());
 
-        // Lấy teaching assignments cho lớp này - dùng đúng academicYearId
-        List<TeachingAssignment> assignments = teachingAssignmentRepository.findByClassIdAndAcademicYearIdAndSemester(
-                targetClass.getId(), targetClass.getAcademicYearId(), semester);
+        // Lấy toàn bộ teaching assignments cho lớp này trong năm học (không lọc theo semester để tránh mất dữ liệu do gán nhầm)
+        List<TeachingAssignment> assignments = teachingAssignmentRepository.findByClassIdAndAcademicYearId(
+                targetClass.getId(), targetClass.getAcademicYearId());
         
         log.info("Querying teaching assignments with classId={}, academicYearId={}, semester={}", 
                 targetClass.getId(), targetClass.getAcademicYearId(), semester);
@@ -157,7 +157,24 @@ public class TimetableServiceImpl implements TimetableService {
 
         // Tìm timetable entries - dùng method có sẵn
         // Tính ngày bắt đầu và kết thúc tuần
-        LocalDate startOfWeek = LocalDate.of(year, 9, 1).plusWeeks(week - 1).with(DayOfWeek.MONDAY);
+        // Tính ngày bắt đầu và kết thúc tuần dựa trên học kỳ
+        LocalDate semesterStartDate;
+        if (semester == 2) {
+            // Học kỳ 2 bắt đầu từ giữa tháng 1 của năm tiếp theo (year + 1)
+            semesterStartDate = LocalDate.of(year + 1, 1, 15);
+        } else {
+            // Học kỳ 1 bắt đầu từ 01/09 của năm học (year)
+            semesterStartDate = LocalDate.of(year, 9, 1);
+        }
+
+        // Tìm Thứ 2 của tuần chứa ngày bắt đầu học kỳ
+        LocalDate firstMonday = semesterStartDate.with(DayOfWeek.MONDAY);
+        // Nếu Monday rơi sau ngày bắt đầu, thì Monday của tuần đó là Monday trước đó
+        if (firstMonday.isAfter(semesterStartDate)) {
+            firstMonday = firstMonday.minusWeeks(1);
+        }
+
+        LocalDate startOfWeek = firstMonday.plusWeeks(week - 1);
         LocalDate endOfWeek = startOfWeek.plusDays(6);
         
         log.info("Searching timetable entries between {} and {}", startOfWeek, endOfWeek);

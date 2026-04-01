@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,6 +39,7 @@ public class StudentServiceImpl implements StudentService {
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TimetableRepository timetableRepository;
 
     private SchoolClass resolveSchoolClassByIdOrName(String classIdOrName) {
         if (classIdOrName == null) return null;
@@ -280,13 +282,23 @@ public class StudentServiceImpl implements StudentService {
                 map.put("teacherName", teacher != null ? teacher.getFullName() : "N/A");
 
                 List<AttendanceSession> sessions = attendanceSessionRepository.findByTeachingAssignmentId(assignment.getId());
-                long totalSessions = sessions.size();
-                long attendedSessions = sessions.stream()
-                        .filter(s -> attendanceRepository.findFirstByAttendanceSessionIdAndStudentId(s.getId(), studentId).isPresent())
-                        .count();
+                // Deduplicate sessions for counting (tránh lặp do dữ liệu cũ - Key: Date_Period)
+                Map<String, Boolean> sessionMap = new HashMap<>(); // Value: isPresent?
+                for (AttendanceSession s : sessions) {
+                    if (s.getDate() == null || s.getPeriod() == null) continue;
+                    String sessionKey = s.getDate().toString() + "_" + s.getPeriod();
+                    boolean present = attendanceRepository.findFirstByAttendanceSessionIdAndStudentId(s.getId(), studentId).isPresent();
+                    
+                    if (!sessionMap.containsKey(sessionKey)) {
+                        sessionMap.put(sessionKey, present);
+                    } else if (present) {
+                        // Nếu lặp buổi, chỉ cần có 1 buổi có mặt là được tính "Có mặt" cho tiết đó
+                        sessionMap.put(sessionKey, true);
+                    }
+                }
 
-                map.put("totalSessions", totalSessions);
-                map.put("attendedSessions", attendedSessions);
+                map.put("totalSessions", (long) sessionMap.size());
+                map.put("attendedSessions", sessionMap.values().stream().filter(v -> v).count());
                 result.add(map);
             }
 
@@ -299,10 +311,58 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public List<Map<String, Object>> getAttendanceDetails(String studentId, String assignmentId) {
-        List<AttendanceSession> sessions = attendanceSessionRepository.findByTeachingAssignmentId(assignmentId);
-        List<Map<String, Object>> result = new ArrayList<>();
+        // 1. Lấy tất cả các buổi đã thực sự mở điểm danh
+        List<AttendanceSession> actualSessions = attendanceSessionRepository.findByTeachingAssignmentId(assignmentId);
+        
+        // 2. Lấy tất cả các tiết học dự kiến từ thời khóa biểu (Planned)
+        List<Timetable> plannedLessons = timetableRepository.findByTeachingAssignmentId(assignmentId);
+        
+        // 0. Tìm thông tin phân công giảng dạy để lấy học kỳ
+        TeachingAssignment assignment = teachingAssignmentRepository.findById(assignmentId).orElse(null);
+        int currentSemester = (assignment != null) ? assignment.getSemester() : 2;
 
-        for (AttendanceSession session : sessions) {
+        // 3. Dùng Map để gộp và hiển thị đầy đủ (Key: Date_Period)
+        Map<String, Map<String, Object>> consolidatedMap = new LinkedHashMap<>();
+
+        // 4. Bước 1: Nạp tất cả các tiết học ĐÃ QUA từ thời khóa biểu vào lịch sử trước
+        LocalDate today = LocalDate.now();
+
+        // Ngưỡng ngày bắt đầu của Học kỳ để lọc dữ liệu "rác"
+        // HK1: từ 01/09; HK2: từ 15/01
+        LocalDate semesterThreshold = (currentSemester == 2) 
+            ? LocalDate.of(today.getYear(), 1, 15) 
+            : LocalDate.of(today.getYear() - (today.getMonthValue() < 9 ? 1 : 0), 9, 1);
+        
+        for (Timetable lesson : plannedLessons) {
+            if (lesson.getActualDate() == null || lesson.getActualDate().isAfter(today)) continue;
+            
+            // CHỈ lấy những tiết thuộc đúng học kỳ (lọc rác HK1 lẫn vào HK2)
+            if (lesson.getActualDate().isBefore(semesterThreshold)) continue;
+            
+            
+            String key = lesson.getActualDate().toString() + "_" + lesson.getPeriod();
+            Map<String, Object> map = new HashMap<>();
+            map.put("sessionId", null); 
+            map.put("date", lesson.getActualDate());
+            map.put("period", lesson.getPeriod());
+            map.put("isPresent", false);
+            map.put("status", "ABSENT");
+            map.put("note", "Tiết học theo kế hoạch (Chưa mở/Quên điểm danh)");
+            
+            consolidatedMap.put(key, map);
+        }
+
+
+
+        // 5. Bước 2: Nạp/Ghi đè bằng dữ liệu điểm danh thực tế
+        for (AttendanceSession session : actualSessions) {
+            if (session.getDate() == null || session.getPeriod() == null) continue;
+
+            // CHỈ lấy những buổi thuộc đúng học kỳ (theo ngày)
+            if (session.getDate().isBefore(semesterThreshold)) continue;
+            
+            String key = session.getDate().toString() + "_" + session.getPeriod();
+            
             Map<String, Object> map = new HashMap<>();
             map.put("sessionId", session.getId());
             map.put("date", session.getDate());
@@ -321,9 +381,37 @@ public class StudentServiceImpl implements StudentService {
                 map.put("isPresent", false);
                 map.put("status", "ABSENT");
             }
-            result.add(map);
+            
+            // Ưu tiên giữ lại bản ghi có trạng thái "Có mặt" (isPresent=true)
+            if (!consolidatedMap.containsKey(key)) {
+                consolidatedMap.put(key, map);
+            } else {
+                // Nếu bản ghi hiện tại là bản ghi kế hoạch (không có sessionId)
+                // Hoặc bản ghi hiện tại không có mặt nhưng bản ghi mới có mặt
+                boolean currentIsPlan = consolidatedMap.get(key).get("sessionId") == null;
+                boolean currentIsPresent = (boolean) consolidatedMap.get(key).get("isPresent");
+                boolean newIsPresent = (boolean) map.get("isPresent");
+                
+                if (currentIsPlan || (!currentIsPresent && newIsPresent)) {
+                    consolidatedMap.put(key, map);
+                }
+            }
         }
-        return result;
+        List<Map<String, Object>> resultList = new ArrayList<>(consolidatedMap.values());
+        
+        // Sắp xếp các buổi học theo thời gian tăng dần
+        resultList.sort((m1, m2) -> {
+            LocalDate d1 = (LocalDate) m1.get("date");
+            LocalDate d2 = (LocalDate) m2.get("date");
+            int dateComp = d1.compareTo(d2);
+            if (dateComp != 0) return dateComp;
+            
+            Integer p1 = (Integer) m1.get("period");
+            Integer p2 = (Integer) m2.get("period");
+            return p1.compareTo(p2);
+        });
+
+        return resultList;
     }
 
     private static List<String> buildClassIdCandidates(String raw, String classKey, Integer gradeLevel, String classSimpleName) {

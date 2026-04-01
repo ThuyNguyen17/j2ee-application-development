@@ -156,6 +156,28 @@ export default function StudentTimetable() {
     [timetable]
   );
 
+  /**
+   * 📌 Danh sách các thứ với ngày chính xác
+   */
+  const displayedDays = React.useMemo(() => {
+    const weekData = weekOptions.find((w) => w.value === selectedWeek);
+    if (!weekData || !weekData.startDate) return DAYS;
+
+    const baseDate = new Date(weekData.startDate);
+    baseDate.setHours(12, 0, 0, 0); // Tránh lệch múi giờ khi tính toán
+    
+    return DAYS.map((day, index) => {
+      const d = new Date(baseDate);
+      d.setDate(baseDate.getDate() + index);
+      const dayStr = d.getDate().toString().padStart(2, '0');
+      const monthStr = (d.getMonth() + 1).toString().padStart(2, '0');
+      return {
+        ...day,
+        label: `${day.label} (${dayStr}/${monthStr})`
+      };
+    });
+  }, [selectedWeek, weekOptions]);
+
   const handleFirstWeek = () => setSelectedWeek(1);
   const handlePreviousWeek = () => {
     if (selectedWeek > 1) setSelectedWeek(selectedWeek - 1);
@@ -213,7 +235,7 @@ export default function StudentTimetable() {
 
       <TimetableGrid
         periods={PERIODS}
-        days={DAYS}
+        days={displayedDays}
         renderCellContent={renderCellContent}
         getCellClassName={getCellClassName}
       />

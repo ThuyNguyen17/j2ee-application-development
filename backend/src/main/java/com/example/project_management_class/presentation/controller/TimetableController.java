@@ -34,13 +34,20 @@ public class TimetableController {
         if (week != null && year != null) {
             LocalDate startOfSemester;
             if (semester != null && semester == 2) {
-                // Học kỳ 2 bắt đầu từ 1/1 năm sau
-                startOfSemester = LocalDate.of(year + 1, 1, 1);
+                // Học kỳ 2 bắt đầu từ giữa tháng 1 của năm tiếp theo (year + 1) - Đồng bộ với Service và Frontend
+                startOfSemester = LocalDate.of(year + 1, 1, 15);
             } else {
-                // Học kỳ 1 (mặc định) bắt đầu từ 1/9
+                // Học kỳ 1 bắt đầu từ 01/09 của năm học (year)
                 startOfSemester = LocalDate.of(year, 9, 1);
             }
-            LocalDate startOfWeek = startOfSemester.plusWeeks(week - 1).with(DayOfWeek.MONDAY);
+            
+            // Tìm Thứ 2 đầu tiên của học kỳ
+            LocalDate firstMonday = startOfSemester.with(DayOfWeek.MONDAY);
+            if (firstMonday.isAfter(startOfSemester)) {
+                firstMonday = firstMonday.minusWeeks(1);
+            }
+            
+            LocalDate startOfWeek = firstMonday.plusWeeks(week - 1);
             LocalDate endOfWeek = startOfWeek.plusDays(6);
             return timetableService.getTeacherTimetableByRange(teacherId, startOfWeek, endOfWeek);
         }

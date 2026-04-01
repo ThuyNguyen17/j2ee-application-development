@@ -141,6 +141,8 @@ export function generateWeeksForSemester(semester, academicYearStart) {
     } else {
         return weeks;
     }
+    
+    semesterStart.setHours(12, 0, 0, 0); // Chuẩn hóa giờ để tránh lệch ngày do múi giờ
 
     const maxWeeks = semester === 1
         ? SEMESTER_CONFIG.SEMESTER_1.MAX_WEEKS
@@ -149,6 +151,7 @@ export function generateWeeksForSemester(semester, academicYearStart) {
     for (let weekNum = 1; weekNum <= maxWeeks; weekNum++) {
         const weekStart = new Date(semesterStart);
         weekStart.setDate(semesterStart.getDate() + (weekNum - 1) * 7);
+        weekStart.setHours(12, 0, 0, 0); // Đảm bảo luôn là 12 trưa
 
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);

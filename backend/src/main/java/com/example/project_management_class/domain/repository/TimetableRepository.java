@@ -14,9 +14,10 @@ public interface TimetableRepository extends MongoRepository<Timetable, String> 
             LocalDate endDate
     );
 
-    // 👉 Query theo ngày cụ thể
     List<Timetable> findByTeachingAssignmentIdInAndActualDate(
             List<String> assignmentIds,
             LocalDate date
     );
+
+    List<Timetable> findByTeachingAssignmentId(String teachingAssignmentId);
 }
