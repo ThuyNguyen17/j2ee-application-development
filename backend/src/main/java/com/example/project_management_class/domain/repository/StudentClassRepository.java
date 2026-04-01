@@ -19,4 +19,7 @@ public interface StudentClassRepository extends MongoRepository<StudentClass, St
     List<StudentClass> findByAcademicYearIdAndClassId(String academicYearId, String classId);
     List<StudentClass> findByAcademicYearIdAndClassIdIgnoreCase(String academicYearId, String classId);
     Optional<StudentClass> findByStudentIdAndAcademicYearId(String studentId, String academicYearId);
+    
+    // Count students in a class
+    long countByClassId(String classId);
 }

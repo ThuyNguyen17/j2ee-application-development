@@ -1,12 +1,21 @@
 package com.example.project_management_class.presentation.controller;
 
 import com.example.project_management_class.domain.model.TeachingAssignment;
+import com.example.project_management_class.domain.model.Subject;
+import com.example.project_management_class.domain.model.SchoolClass;
+import com.example.project_management_class.domain.model.Teacher;
 import com.example.project_management_class.domain.repository.TeachingAssignmentRepository;
+import com.example.project_management_class.domain.repository.SubjectRepository;
+import com.example.project_management_class.domain.repository.SchoolClassRepository;
+import com.example.project_management_class.domain.repository.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/teaching-assignments")
@@ -15,10 +24,32 @@ import java.util.List;
 public class TeachingAssignmentController {
 
     private final TeachingAssignmentRepository repository;
+    private final SubjectRepository subjectRepository;
+    private final SchoolClassRepository schoolClassRepository;
+    private final TeacherRepository teacherRepository;
+
+    private Map<String, Object> toDto(TeachingAssignment ta) {
+        Map<String, Object> dto = new HashMap<>();
+        dto.put("id", ta.getId());
+        dto.put("teacherId", ta.getTeacherId());
+        dto.put("subjectId", ta.getSubjectId());
+        dto.put("classId", ta.getClassId());
+        dto.put("academicYearId", ta.getAcademicYearId());
+        dto.put("semester", ta.getSemester());
+        
+        // Lấy tên từ các repository
+        subjectRepository.findById(ta.getSubjectId()).ifPresent(s -> dto.put("subjectName", s.getSubjectName()));
+        schoolClassRepository.findById(ta.getClassId()).ifPresent(c -> dto.put("className", c.getGradeLevel() + c.getClassName()));
+        teacherRepository.findById(ta.getTeacherId()).ifPresent(t -> dto.put("teacherName", t.getFullName()));
+        
+        return dto;
+    }
 
     @GetMapping("/teacher/{teacherId}")
-    public ResponseEntity<List<TeachingAssignment>> getByTeacher(@PathVariable String teacherId) {
-        return ResponseEntity.ok(repository.findByTeacherId(teacherId));
+    public ResponseEntity<List<Map<String, Object>>> getByTeacher(@PathVariable String teacherId) {
+        List<TeachingAssignment> assignments = repository.findByTeacherId(teacherId);
+        List<Map<String, Object>> result = assignments.stream().map(this::toDto).collect(Collectors.toList());
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping
@@ -27,8 +58,10 @@ public class TeachingAssignmentController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<TeachingAssignment>> getAll() {
-        return ResponseEntity.ok(repository.findAll());
+    public ResponseEntity<List<Map<String, Object>>> getAll() {
+        List<TeachingAssignment> assignments = repository.findAll();
+        List<Map<String, Object>> result = assignments.stream().map(this::toDto).collect(Collectors.toList());
+        return ResponseEntity.ok(result);
     }
 
     @PutMapping("/{id}")

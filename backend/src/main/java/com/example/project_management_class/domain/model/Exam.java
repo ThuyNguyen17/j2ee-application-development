@@ -13,6 +13,7 @@ public class Exam {
     private String id;
     private String title;
     private String description;
+    private String subjectId;
     private LocalDate examDate;
     private Integer duration;
     private Integer maxScore;

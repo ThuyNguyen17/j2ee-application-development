@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Edit2, LogOut } from "lucide-react";
-import "./TeacherProfile.css";
+import "./Profile.css";
 
-const TeacherProfileSection = () =>{
+const Profile = () =>{
     const [teacherInfo, setTeacherInfo] = useState({
         name: "",
         email: "",
@@ -227,4 +227,4 @@ const TeacherProfileSection = () =>{
     )
 }
 
-export default TeacherProfileSection
+export default Profile;

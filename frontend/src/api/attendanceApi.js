@@ -1,9 +1,10 @@
-
 import axios from 'axios';
+import { BASE_URL } from './config';
 
 // Khi dùng Vite Proxy, ta chỉ cần gọi đường dẫn tương đối.
 // Vite sẽ tự động chuyển tiếp các yêu cầu /api sang http://localhost:8080
 const api = axios.create({
+    baseURL: BASE_URL,
     headers: {
         'ngrok-skip-browser-warning': 'true',
         'Content-Type': 'application/json'

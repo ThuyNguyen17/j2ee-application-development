@@ -17,10 +17,12 @@ public interface StudentService {
     List<Map<String, Object>> getAttendanceDetails(String studentId, String assignmentId);
     List<Map<String, Object>> getStudentsByClass(String className);
     void importStudentsFromExcel(MultipartFile file);
+    void importStudentsFromExcelWithClass(MultipartFile file, String classId);
     ByteArrayInputStream exportStudentsToExcel();
     List<Student> getAllStudents();
     void deleteStudent(String id);
     Student getStudentById(String id);
+    Student getStudentByUserId(String userId);
     Student updateStudent(String id, Student student);
     Student createStudent(Student student);
     void updateStudentSeating(String studentId, String className, Integer row, Integer col, String notes);

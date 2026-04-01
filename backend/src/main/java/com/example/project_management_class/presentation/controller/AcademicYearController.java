@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -18,21 +17,36 @@ public class AcademicYearController {
 
     private final AcademicYearRepository academicYearRepository;
 
-    @GetMapping("/getall")
-    public ResponseEntity<Map<String, Object>> getAllAcademicYears() {
-        List<AcademicYear> academicYears = academicYearRepository.findAll();
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("academicYears", academicYears);
-        return ResponseEntity.ok(response);
+    @GetMapping
+    public ResponseEntity<?> getAllAcademicYears() {
+        return ResponseEntity.ok(academicYearRepository.findAll());
     }
 
     @GetMapping("/active")
-    public ResponseEntity<Map<String, Object>> getActiveAcademicYear() {
-        AcademicYear activeYear = academicYearRepository.findByActiveTrue().orElse(null);
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("academicYear", activeYear);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> getActiveAcademicYear() {
+        return academicYearRepository.findByActiveTrue()
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // 🔥 Thêm API lấy semester start (quan trọng cho timetable)
+    @GetMapping("/semester-start")
+    public ResponseEntity<?> getSemesterStart(
+            @RequestParam int semester
+    ) {
+        AcademicYear year = academicYearRepository.findByActiveTrue()
+                .orElseThrow(() -> new RuntimeException("No active academic year"));
+
+        Map<String, Object> result = new HashMap<>();
+
+        if (semester == 1) {
+            result.put("startDate", year.getStartDate());
+        } else if (semester == 2) {
+            result.put("startDate", year.getStartDate().plusMonths(5));
+        } else {
+            throw new RuntimeException("Invalid semester");
+        }
+
+        return ResponseEntity.ok(result);
     }
 }

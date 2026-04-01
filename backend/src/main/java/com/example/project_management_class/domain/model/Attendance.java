@@ -17,7 +17,6 @@ public class Attendance {
     private String attendanceSessionId;
     private String studentId;
     private String studentName;
-    private String studentClass;
     private String location;
     private String note;
 

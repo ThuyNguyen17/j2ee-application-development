@@ -6,7 +6,8 @@ import { BsPersonFill, BsPencilSquare, BsSave, BsX, BsTrash, BsPlus, BsGraphUp }
 
 const ChartContainer = styled.div`
   padding: 20px;
-  background: var(--color-bg-primary);
+  /* background: var(--color-bg-primary); */
+  background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   min-height: 80vh;
@@ -38,7 +39,8 @@ const Grid = styled.div`
   grid-template-columns: repeat(6, minmax(80px, 1fr));
   grid-template-rows: repeat(6, minmax(80px, 1fr));
   gap: 16px;
-  background: var(--color-bg-secondary);
+ /* background: var(--color-bg-secondary); */
+  background: #f0f2f5;
   padding: 20px;
   border-radius: 12px;
   border: 2px dashed var(--color-border-hr);
@@ -76,6 +78,7 @@ const StudentCard = styled(motion.div)`
   text-align: center;
   font-size: 0.8rem;
   z-index: 10;
+  position: relative; /* CRITICAL FIX: Activates z-index so it floats above other panels during drag */
 
   &:active {
     cursor: ${props => props.$canDrag ? 'grabbing' : 'default'};
@@ -157,8 +160,8 @@ const Button = styled.button`
   padding: 8px 16px;
   border-radius: 8px;
   border: none;
-  background: ${props => props.variant === 'secondary' ? 'var(--color-bg-secondary)' : '#667eea'};
-  color: ${props => props.variant === 'secondary' ? 'var(--color-text-primary)' : 'white'};
+  background: ${props => props.$variant === 'secondary' ? 'var(--color-bg-secondary)' : '#667eea'};
+  color: ${props => props.$variant === 'secondary' ? 'var(--color-text-primary)' : 'white'};
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -178,7 +181,8 @@ const SelectionGrid = styled.div`
 `;
 
 const ClassCard = styled(motion.div)`
-  background: var(--color-bg-secondary);
+ /* background: var(--color-bg-secondary); */
+  background: #ffffff; /* Nền thẻ màu trắng */
   border: 1px solid var(--color-border-hr);
   border-radius: 12px;
   padding: 24px;
@@ -208,7 +212,7 @@ const MainContent = styled.div`
   display: flex;
   gap: 30px;
   margin-top: 20px;
-  height: calc(100vh - 250px);
+  align-items: flex-start;
 `;
 
 const LeftSection = styled.div`
@@ -217,11 +221,12 @@ const LeftSection = styled.div`
   padding: 30px;
   border-radius: 16px;
   border: 1px solid var(--color-border-hr);
-  overflow-y: auto;
   
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: sticky;
+  top: 20px;
 `;
 
 const RightSection = styled.div`
@@ -235,20 +240,10 @@ const RightSection = styled.div`
 `;
 
 const StudentList = styled.div`
-  flex: 1;
-  overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   padding: 10px;
-  
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: var(--color-border-hr);
-    border-radius: 10px;
-  }
 `;
 
 const ScoreInput = styled.input`
@@ -332,6 +327,11 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
   useEffect(() => {
     fetchClasses();
     fetchCurrentTeacher();
+    // Khôi phục lớp đã chọn từ localStorage
+    const savedClass = localStorage.getItem('selectedClass');
+    if (savedClass) {
+      setSelectedClass(savedClass);
+    }
   }, []);
 
   useEffect(() => {
@@ -354,6 +354,7 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
     setLoading(true);
     try {
       const resp = await axios.get(`http://localhost:8080/api/students/class/${className}`);
+      console.log('Fetched students:', resp.data);
       setStudents(resp.data);
     } catch (err) {
       console.error('Error fetching students', err);
@@ -370,6 +371,8 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
     const seatId = element?.closest('[data-seat-id]')?.getAttribute('data-seat-id');
     const isRightPanel = element?.closest('#student-list-panel') !== null;
     
+    console.log('handleDragEnd:', { studentId: student.studentId, seatId, isRightPanel, selectedClass });
+    
     if (seatId) {
       const [r, c] = seatId.split('-').map(Number);
       
@@ -378,10 +381,12 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
       
       if (!occupied) {
         try {
-          await axios.put(`http://localhost:8080/api/students/${student.studentId}/className/${selectedClass}/seating`, {
+          console.log('Calling API to save seat:', { row: r, col: c });
+          const resp = await axios.put(`http://localhost:8080/api/students/${student.studentId}/className/${selectedClass}/seating`, {
             seatRow: r,
             seatColumn: c
           });
+          console.log('API response:', resp.data);
           
           setStudents(prev => prev.map(s => 
             s.studentId === student.studentId ? { ...s, seatRow: r, seatColumn: c } : s
@@ -393,10 +398,12 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
     } else if (isRightPanel || student.seatRow !== null) {
       // Dropped on right panel or outside grid - unassign the student
       try {
-        await axios.put(`http://localhost:8080/api/students/${student.studentId}/className/${selectedClass}/seating`, {
+        console.log('Calling API to unassign seat');
+        const resp = await axios.put(`http://localhost:8080/api/students/${student.studentId}/className/${selectedClass}/seating`, {
           seatRow: null,
           seatColumn: null
         });
+        console.log('API response:', resp.data);
         setStudents(prev => prev.map(s => 
           s.studentId === student.studentId ? { ...s, seatRow: null, seatColumn: null } : s
         ));
@@ -419,6 +426,16 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
     } catch (err) {
       console.error('Error unassigning seat', err);
     }
+  };
+
+  const handleSelectClass = (className) => {
+    setSelectedClass(className);
+    localStorage.setItem('selectedClass', className);
+  };
+
+  const handleChangeClass = () => {
+    setSelectedClass('');
+    localStorage.removeItem('selectedClass');
   };
 
   const openNoteModal = (student) => {
@@ -455,16 +472,28 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
   // Score management functions
   const fetchAssignments = async () => {
     try {
-      // Use teacher-specific endpoint if we have teacherId, otherwise get all
-      let url = 'http://localhost:8080/api/v1/teaching-assignments/all';
-      if (currentTeacher?.teacherId) {
+      let url;
+      if (isAdmin) {
+        // Admin lấy tất cả teaching assignments của lớp này
+        url = 'http://localhost:8080/api/v1/teaching-assignments/all';
+      } else if (currentTeacher?.teacherId) {
+        // Teacher chỉ lấy các môn mình được phân công
         url = `http://localhost:8080/api/v1/teaching-assignments/teacher/${currentTeacher.teacherId}`;
+      } else {
+        return [];
       }
+      
+      console.log('fetchAssignments - URL:', url);
       const resp = await axios.get(url);
+      console.log('fetchAssignments - raw data:', resp.data);
+      
       // Filter assignments by class name
-      const filtered = resp.data.filter(a => 
-        a.className && a.className.toLowerCase().includes(selectedClass.toLowerCase())
-      );
+      const filtered = resp.data.filter(a => {
+        const match = a.className && a.className.toLowerCase().includes(selectedClass.toLowerCase());
+        console.log('Checking assignment:', a.subjectName, 'className:', a.className, 'match:', match);
+        return match;
+      });
+      
       setAssignments(filtered);
       return filtered;
     } catch (err) {
@@ -490,13 +519,15 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
     setCurrentAssignment(null);
     setSelectedAssignment('');
     
+    console.log('openScoreModal - currentTeacher:', currentTeacher);
+    console.log('openScoreModal - selectedClass:', selectedClass);
+    
     // Fetch assignments and auto-detect based on teacher
     const classAssignments = await fetchAssignments();
     fetchStudentScores(student.studentId);
     
-    // Debug
-    console.log('Current teacher:', currentTeacher);
-    console.log('Class assignments:', classAssignments);
+    console.log('openScoreModal - classAssignments:', classAssignments);
+    console.log('openScoreModal - assignments state:', assignments);
     
     // Auto-select assignment based on current teacher
     if (classAssignments.length > 0) {
@@ -670,7 +701,7 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
              <div style={{background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '5px 15px', borderRadius: '20px', fontWeight: 'bold'}}>
                 Lớp: {selectedClass}
              </div>
-             <Button variant="secondary" onClick={() => setSelectedClass('')}>
+             <Button $variant="secondary" onClick={handleChangeClass}>
                 <BsX /> Đổi lớp
              </Button>
            </div>
@@ -700,7 +731,7 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
             return (
               <ClassCard 
                 key={c.id} 
-                onClick={() => setSelectedClass(label)}
+                onClick={() => handleSelectClass(label)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -792,7 +823,7 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
                 onChange={(e) => setNoteContent(e.target.value)}
               />
               <div style={{display: 'flex', gap: 10, justifyContent: 'flex-end'}}>
-                <Button variant="secondary" onClick={() => setEditingNote(null)}>Hủy</Button>
+                <Button $variant="secondary" onClick={() => setEditingNote(null)}>Hủy</Button>
                 <Button onClick={saveNote}>Lưu ghi chú</Button>
               </div>
             </Modal>
@@ -822,19 +853,38 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
                     <span style={{ color: 'var(--color-text-placeholder)', marginLeft: '10px' }}>({currentAssignment.teacherName})</span>
                   )}
                 </div>
-              ) : (
+              ) : assignments.length === 1 ? (
+                // Nếu chỉ có 1 môn, tự động chọn và hiển thị luôn
+                <div style={{ marginBottom: '20px', padding: '10px', background: 'var(--color-bg-secondary)', borderRadius: '8px' }}>
+                  <strong>Môn học:</strong> {assignments[0].subjectName}
+                  {assignments[0].teacherName && (
+                    <span style={{ color: 'var(--color-text-placeholder)', marginLeft: '10px' }}>({assignments[0].teacherName})</span>
+                  )}
+                  {setSelectedAssignment(assignments[0].id)}
+                  {setCurrentAssignment(assignments[0])}
+                </div>
+              ) : assignments.length > 1 ? (
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Môn học:</label>
                   <ScoreSelect 
                     value={selectedAssignment} 
-                    onChange={(e) => setSelectedAssignment(e.target.value)}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      setSelectedAssignment(selectedId);
+                      const selected = assignments.find(a => a.id === selectedId);
+                      setCurrentAssignment(selected);
+                    }}
                     style={{ width: '100%' }}
                   >
                     <option value="">Chọn môn học...</option>
                     {assignments.map(a => (
-                      <option key={a.id} value={a.id}>{a.subjectName} - {a.teacherName}</option>
+                      <option key={a.id} value={a.id}>{a.subjectName}</option>
                     ))}
                   </ScoreSelect>
+                </div>
+              ) : (
+                <div style={{ marginBottom: '20px', padding: '10px', background: '#ffebee', borderRadius: '8px', color: '#c62828' }}>
+                  Bạn không được phân công giảng dạy môn nào trong lớp này.
                 </div>
               )}
 
@@ -890,7 +940,7 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
                     style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border-hr)' }}
                   />
                   
-                  <Button variant="secondary" onClick={() => removeScoreItem(index)} style={{ padding: '8px' }}>
+                  <Button $variant="secondary" onClick={() => removeScoreItem(index)} style={{ padding: '8px' }}>
                     <BsTrash />
                   </Button>
                 </ScoreItemRow>
@@ -902,7 +952,7 @@ const ClassroomSeatingChart = ({ role = 'teacher' }) => {
                 </Button>
                 
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <Button variant="secondary" onClick={() => { setEditingScores(false); setCurrentAssignment(null); }}>
+                  <Button $variant="secondary" onClick={() => { setEditingScores(false); setCurrentAssignment(null); }}>
                     <BsX /> Hủy
                   </Button>
                   <Button onClick={saveStudentScores}>

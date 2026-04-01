@@ -1,9 +1,9 @@
 package com.example.project_management_class.presentation.controller;
 
 import com.example.project_management_class.application.service.EventService;
-import com.example.project_management_class.application.service.NotificationService;
+import com.example.project_management_class.application.service.AnnouncementService;
 import com.example.project_management_class.domain.model.Event;
-import com.example.project_management_class.domain.model.Notification;
+import com.example.project_management_class.domain.model.Announcement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +17,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EventController {
     private final EventService eventService;
-    private final NotificationService notificationService;
+    private final AnnouncementService announcementService;
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> addEvent(@RequestBody Event event) {
@@ -67,17 +67,17 @@ public class EventController {
         }
         
         // Create notification
-        Notification notification = new Notification();
-        notification.setTitle("Sự kiện mới: " + event.getTitle());
-        notification.setContent("Thông báo về sự kiện: " + event.getTitle() + 
+        Announcement announcement = new Announcement();
+        announcement.setTitle("Sự kiện mới: " + event.getTitle());
+        announcement.setContent("Thông báo về sự kiện: " + event.getTitle() +
             "\nThời gian: " + (event.getDate() != null ? event.getDate() : "Chưa xác định") +
             "\nĐịa điểm: " + (event.getLocation() != null ? event.getLocation() : "Chưa xác định") +
             "\nMô tả: " + (event.getDescription() != null ? event.getDescription() : "Không có mô tả"));
-        notification.setTargetRole(targetRole);
-        notification.setClassId(null); // Events are general, not class-specific
-        notification.setAcademicYearId(null);
-        
-        notificationService.createNotification(notification);
+        announcement.setTargetRole(targetRole);
+        announcement.setClassId(null); // Events are general, not class-specific
+        announcement.setAcademicYearId(null);
+
+        announcementService.createAnnouncement(announcement);
     }
 
     @GetMapping("/getall")

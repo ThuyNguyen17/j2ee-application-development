@@ -7,18 +7,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "teaching_assignments")
 @Data
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class TeachingAssignment {
 
     @Id
     private String id;
     private String teacherId;
-    private String subjectName;
-    private String className; // e.g. "10A1"
-    private Integer academicYear;
+    private String subjectId;
+    private String classId;
+    private String academicYearId;
     private Integer semester;
 }

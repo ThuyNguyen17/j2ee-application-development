@@ -48,12 +48,12 @@ export default function StudentTimetable() {
       try {
         const storedUser = localStorage.getItem("user");
         if (!storedUser) {
-          navigate("/student/login");
+          navigate("/login");
           return;
         }
         const user = JSON.parse(storedUser);
         if (!user) {
-          navigate("/student/login");
+          navigate("/login");
           return;
         }
         if (user.role === "TEACHER") {
@@ -61,10 +61,10 @@ export default function StudentTimetable() {
           return;
         }
         if (user.role !== "STUDENT") {
-          navigate("/student/login");
+          navigate("/login");
           return;
         }
-        
+
         // Fetch full student info to get className
         const studentId = user.studentId || user.userId;
         if (studentId) {
@@ -74,42 +74,30 @@ export default function StudentTimetable() {
             console.log("Raw student data:", JSON.stringify(studentData, null, 2));
             console.log("Available fields:", Object.keys(studentData));
             setStudent(studentData);
-            
+
             // Try to get className from various possible fields
-            const rawClassName = studentData.className || studentData.class || studentData.grade || studentData.classId;
+            const rawClassName = studentData.studentClass || studentData.className || studentData.class || studentData.grade || studentData.classId;
             console.log("Raw className found:", rawClassName);
             if (rawClassName) {
               const normalized = normalizeClassName(rawClassName);
               console.log("Normalized className:", normalized);
               setClassName(normalized);
             } else {
-              // If no className in student data, try to get from StudentClass collection
-              console.log("No className in student data, checking student_classes...");
+              // If no className in student data, try to get from StudentClass collection using new API
+              console.log("No className in student data, checking student_classes/student/" + studentId);
               try {
-                const scResp = await axios.get(`${API_URL}/student-classes`);
-                const studentClasses = scResp.data || [];
-                const studentClass = studentClasses.find(sc => sc.studentId === studentId || sc.studentId === studentData.id);
-                if (studentClass?.classId) {
-                  // Fetch the actual SchoolClass to get the class name (not ID)
-                  try {
-                    const classResp = await axios.get(`${API_URL}/v1/class/${studentClass.classId}`);
-                    const classData = classResp.data;
-                    // Use gradeLevel + className to form full class name like "10A1"
-                    const fullClassName = classData.gradeLevel && classData.className 
-                      ? `${classData.gradeLevel}${classData.className}`
-                      : classData.className || classData.name || studentClass.classId;
-                    const normalized = normalizeClassName(fullClassName);
-                    console.log("Found className from SchoolClass:", normalized);
-                    setClassName(normalized);
-                  } catch (classErr) {
-                    console.error("Error fetching SchoolClass:", classErr);
-                    // Fallback: try to use classId directly
-                    const normalized = normalizeClassName(studentClass.classId);
-                    setClassName(normalized);
-                  }
+                const scResp = await axios.get(`${API_URL}/student-classes/student/${studentId}/class`);
+                const classInfo = scResp.data;
+                
+                if (classInfo.success && classInfo.className) {
+                  const normalized = normalizeClassName(classInfo.className);
+                  console.log("Found className from new API:", normalized);
+                  setClassName(normalized);
+                } else {
+                  console.warn("No class info found for studentId:", studentId);
                 }
               } catch (scErr) {
-                console.error("Error fetching student_classes:", scErr);
+                console.error("Error fetching student class info:", scErr);
               }
             }
           } catch (err) {
@@ -126,11 +114,12 @@ export default function StudentTimetable() {
             setClassName(normalizeClassName(user.className));
           }
         }
-      } catch {
-        navigate("/student/login");
+      } catch (e) {
+        console.error("loadStudentInfo total error:", e);
+        navigate("/login");
       }
     };
-    
+
     loadStudentInfo();
   }, [navigate]);
 

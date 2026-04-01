@@ -18,12 +18,12 @@ const SubjectAttendance = () => {
         try {
             const storedUser = localStorage.getItem('user');
             if (!storedUser) {
-                navigate('/student/login');
+                navigate('/login');
                 return;
             }
             const s = JSON.parse(storedUser);
             if (!s) {
-                navigate('/student/login');
+                navigate('/login');
                 return;
             }
             if (s.role === 'TEACHER') {
@@ -31,13 +31,13 @@ const SubjectAttendance = () => {
                 return;
             }
             if (s.role !== 'STUDENT') {
-                navigate('/student/login');
+                navigate('/login');
                 return;
             }
             setStudent({ ...s, className: normalizeClassName(s.className) });
             fetchSessions(s.studentId);
         } catch (e) {
-            navigate('/student/login');
+            navigate('/login');
         }
     }, [assignmentId, navigate]);
 

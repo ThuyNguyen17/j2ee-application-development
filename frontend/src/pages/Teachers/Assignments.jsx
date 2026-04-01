@@ -27,7 +27,7 @@ import {
 } from "../../api/assignmentApi";
 import { getClassesByTeacher } from "../../api/classApi";
 import { BASE_URL } from "../../api/config";
-import "./TeacherAssignments.css";
+import "./Assignments.css";
 
 // Quiz Builder Component
 const QuizBuilder = ({ questions, onChange, maxScore }) => {

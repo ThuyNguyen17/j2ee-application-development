@@ -12,12 +12,12 @@ const StudentDashboard = () => {
         try {
             const storedUser = localStorage.getItem('user');
             if (!storedUser) {
-                navigate('/student/login');
+                navigate('/login');
                 return;
             }
             const user = JSON.parse(storedUser);
             if (!user) {
-                navigate('/student/login');
+                navigate('/login');
                 return;
             }
             if (user.role === 'TEACHER') {
@@ -25,12 +25,12 @@ const StudentDashboard = () => {
                 return;
             }
             if (user.role !== 'STUDENT') {
-                navigate('/student/login');
+                navigate('/login');
                 return;
             }
             setStudent({ ...user, className: normalizeClassName(user.className) });
         } catch (e) {
-            navigate('/student/login');
+            navigate('/login');
         }
     }, [navigate]);
 

@@ -15,7 +15,6 @@ const AttendanceStudent = () => {
     const [status, setStatus] = useState('idle'); // idle, submitting, success, error
 
     const getLocation = () => {
-        // Geolocation REQUIRE HTTPS or localhost
         if (!window.isSecureContext) {
             setGeoLoc("Lỗi: Cần HTTPS để lấy vị trí trên điện thoại.");
             return;

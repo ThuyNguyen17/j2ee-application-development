@@ -42,7 +42,6 @@ public class AnnouncementController {
         audiences.add(targetAudience.toUpperCase());
         audiences.add(lCase.substring(0, 1).toUpperCase() + lCase.substring(1));
         
-        // Handle variations (e.g., student vs students, teacher vs teachers)
         if (lCase.endsWith("s")) {
             audiences.add(lCase.substring(0, lCase.length() - 1));
         } else {
@@ -50,6 +49,45 @@ public class AnnouncementController {
         }
         
         List<Announcement> announcements = announcementService.getAnnouncementsByAudiences(audiences);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("announcements", announcements);
+        return ResponseEntity.ok(response);
+    }
+
+    // Merged from NotificationController
+    @PostMapping("/create")
+    public ResponseEntity<Map<String, Object>> createAnnouncement(@RequestBody Announcement announcement) {
+        announcementService.createAnnouncement(announcement);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Announcement created successfully!");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/role/{targetRole}")
+    public ResponseEntity<Map<String, Object>> getAnnouncementsByRole(@PathVariable String targetRole) {
+        List<Announcement> announcements = announcementService.getAnnouncementsByRole(targetRole);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("announcements", announcements);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/class/{classId}")
+    public ResponseEntity<Map<String, Object>> getAnnouncementsByClass(@PathVariable String classId) {
+        List<Announcement> announcements = announcementService.getAnnouncementsByClass(classId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("announcements", announcements);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/class/{classId}/role/{targetRole}")
+    public ResponseEntity<Map<String, Object>> getAnnouncementsByClassAndRole(
+            @PathVariable String classId, 
+            @PathVariable String targetRole) {
+        List<Announcement> announcements = announcementService.getAnnouncementsByClassAndRole(classId, targetRole);
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("announcements", announcements);

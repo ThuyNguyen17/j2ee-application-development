@@ -1,15 +1,18 @@
 import axios from "axios";
+import { BASE_URL } from './config';
+
+const API_URL = `${BASE_URL}/api/v1`;
 
 export const getTeacherTimetable = async (teacherId, week, academicYear, semester) => {
   const response = await axios.get(
-    `/api/teacher/${teacherId}/timetable?week=${week}&year=${academicYear}&semester=${semester}`
+    `${API_URL}/teacher/${teacherId}/timetable?week=${week}&year=${academicYear}&semester=${semester}`
   );
   return response.data;
 };
 
 export const getClassTimetable = async (className, week, academicYear, semester) => {
   const response = await axios.get(
-    `/api/classes/${encodeURIComponent(className)}/timetable?week=${week}&year=${academicYear}&semester=${semester}`
+    `${BASE_URL}/api/classes/${encodeURIComponent(className)}/timetable?week=${week}&year=${academicYear}&semester=${semester}`
   );
   return response.data;
 };

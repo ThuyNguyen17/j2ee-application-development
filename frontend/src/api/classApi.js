@@ -40,40 +40,28 @@ export const getClassesByTeacher = async (teacherId) => {
         const response = await axios.get(`${API_BASE_URL}/teaching-assignments/teacher/${teacherId}`);
         const assignments = response.data || [];
         
-        // Trích xuất danh sách lớp từ assignments
-        const classNames = [...new Set(assignments.map(a => a.className))];
+        // Trích xuất danh sách lớp từ assignments (dùng classId thay vì className sau refactor)
+        const classIds = [...new Set(assignments.map(a => a.classId).filter(id => id))];
         
         // Lấy tất cả classes và filter theo className
         const allClassesResponse = await axios.get(`${API_BASE_URL}/class/getall`);
         const allClasses = allClassesResponse.data.classes || [];
         
-        // Map className với class objects
-        const teacherClasses = classNames.map(className => {
-            // Normalize className để so sánh
-            const normalizedInput = className.toString().toLowerCase().replace(/\s+/g, '');
-            
+        // Map classId với class objects
+        const teacherClasses = classIds.map(classId => {
             // Tìm class object từ allClasses
-            const classObj = allClasses.find(c => {
-                // Thử nhiều cách so sánh
-                const cClassName = (c.className || '').toString().toLowerCase().replace(/\s+/g, '');
-                const cName = (c.name || '').toString().toLowerCase().replace(/\s+/g, '');
-                const cFull = (c.gradeLevel && c.className) 
-                    ? `${c.gradeLevel}${c.className}`.toLowerCase().replace(/\s+/g, '') 
-                    : '';
-                
-                return cClassName === normalizedInput 
-                    || cName === normalizedInput
-                    || cFull === normalizedInput;
-            });
+            const classObj = allClasses.find(c => c.id === classId);
             
-            const assignment = assignments.find(a => a.className === className);
+            const assignment = assignments.find(a => a.classId === classId);
             
             // Nếu tìm thấy class object, bổ sung thêm thông tin
             if (classObj) {
+                const className = classObj.gradeLevel + classObj.className;
                 return {
                     ...classObj,
-                    id: classObj.id || className,
+                    id: classObj.id || classId,
                     name: className,
+                    className: className,
                     subject: assignment?.subjectName || 'Chưa có môn',
                     room: classObj.room || 'L2-01',
                     studentCount: classObj.studentCount || 30
@@ -82,9 +70,9 @@ export const getClassesByTeacher = async (teacherId) => {
             
             // Nếu không tìm thấy, tạo object mới
             return {
-                id: className,
-                name: className,
-                className: className,
+                id: classId,
+                name: classId,
+                className: classId,
                 subject: assignment?.subjectName || 'Chưa có môn',
                 room: 'L2-01',
                 studentCount: 30
@@ -112,39 +100,40 @@ export const getStudentById = async (id) => {
     return response.data;
 };
 
-// Get students in class - sử dụng student_classes collection
-export const getStudentsInClass = async (classId) => {
+// Get students in class - sử dụng endpoint getStudentsByClass mới
+export const getStudentsInClass = async (classIdOrName) => {
     try {
-        // Lấy tất cả students
-        const allStudentsResponse = await axios.get(`${BASE_URL}/api/students`);
-        const allStudents = allStudentsResponse.data || [];
-        
-        // Lấy student_classes mapping
-        const response = await axios.get(`${BASE_URL}/api/student-classes`);
-        const studentClasses = response.data || [];
-        
-        // Lọc students thuộc classId
-        const classStudentIds = studentClasses
-            .filter(sc => sc.classId === classId || sc.classId === classId.toString())
-            .map(sc => sc.studentId);
-        
-        const studentsInClass = allStudents.filter(s => 
-            classStudentIds.includes(s.id) || classStudentIds.includes(s.userId)
-        );
-        
-        // Format dữ liệu
-        return studentsInClass.map(s => ({
-            id: s.id,
-            fullName: s.fullName,
-            studentCode: s.studentCode || s.studentId || `HS${s.id?.slice(-3) || '000'}`,
-            email: s.contact?.email || `${s.studentCode}@school.edu.vn`,
-            phone: s.contact?.phone || 'N/A',
-            dob: s.dateOfBirth || 'N/A'
-        }));
+        // Nếu là ID (ObjectId 24 ký tự), thì gọi theo ID hoặc label tương ứng
+        // Nhưng endpoint getStudentsByClass hỗ trợ cả className (label)
+        // Trong UI, classItem.name hoặc classItem.className thường là label (10A1)
+        const response = await axios.get(`${BASE_URL}/api/students/class/${encodeURIComponent(classIdOrName)}`);
+        return response.data || [];
     } catch (err) {
         console.error("Error fetching students in class:", err);
         return [];
     }
+};
+
+// Import students to class
+export const importStudentsToClass = async (classId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('classId', classId);
+    
+    const response = await axios.post(`${BASE_URL}/api/students/import-with-class`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};
+
+// Export students from class
+export const exportStudentsFromClass = async (classId) => {
+    const response = await axios.get(`${BASE_URL}/api/students/export`, {
+        responseType: 'blob'
+    });
+    return response.data;
 };
 
 // ===== TEACHER APIs =====

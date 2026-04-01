@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Bell, Calendar, AlertCircle, Filter, ChevronDown } from "lucide-react";
-import { getNotificationsByRole, getNotificationsByClassAndRole } from "../../api/notificationApi";
+import { getNotificationsByRole, getNotificationsByClassAndRole } from "../../api/announcementApi";
 import "./StudentNotifications.css";
 
 const StudentNotifications = () => {

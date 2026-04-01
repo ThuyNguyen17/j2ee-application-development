@@ -20,4 +20,5 @@ public class Student {
     private String gender;
 
     private Contact contact;
+    private String studentClass;
 }

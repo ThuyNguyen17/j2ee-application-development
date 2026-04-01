@@ -1,5 +1,5 @@
 /* Teacher Dashboard - Reuse Student Dashboard Styles */
-@import './StudentDashboard.css';
+@import '../Students/StudentDashboard.css';
 
 .teacher-code {
   color: var(--muted-foreground);

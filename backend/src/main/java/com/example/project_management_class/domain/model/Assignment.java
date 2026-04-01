@@ -14,7 +14,7 @@ public class Assignment {
     private String id;
     private String title;
     private String description;
-    private String grade;
+    private String subjectId;
     private LocalDate deadline;
     private Integer maxScore;
     private String teacherId;

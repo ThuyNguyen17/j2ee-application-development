@@ -4,12 +4,11 @@ import {
   Calendar,
   Search,
   Bell,
-  ArrowRight
 } from "lucide-react";
 import { 
   getAnnouncementsForTeacher
 } from "../../api/announcementApi";
-import "./TeacherAnnouncements.css";
+import "./Announcements.css";
 
 const TeacherAnnouncements = () => {
   const [announcements, setAnnouncements] = useState([]);
@@ -99,12 +98,6 @@ const TeacherAnnouncements = () => {
             </div>
 
             <p className="announcement-content">{announcement.content}</p>
-            
-            <div className="announcement-footer" style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
-               <span style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                 Xem chi tiết <ArrowRight size={12} />
-               </span>
-            </div>
           </div>
         ))}
 

@@ -11,6 +11,8 @@ public interface SchoolClassRepository extends MongoRepository<SchoolClass, Stri
     Optional<SchoolClass> findByGradeLevelAndClassName(Integer gradeLevel, String className);
 
     Optional<SchoolClass> findByGradeLevelAndClassNameIgnoreCase(Integer gradeLevel, String className);
+    
+    List<SchoolClass> findAllByGradeLevelAndClassNameIgnoreCase(Integer gradeLevel, String className);
 
     Optional<SchoolClass> findByAcademicYearIdAndGradeLevelAndClassNameIgnoreCase(String academicYearId, Integer gradeLevel, String className);
     // Backward-compat / tolerant lookup for datasets that store either "A1" or a full label like "10A1" in className.

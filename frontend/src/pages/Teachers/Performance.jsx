@@ -12,7 +12,7 @@ import {
   Trash
 } from "lucide-react";
 import axios from "axios";
-import "./TeacherPerformance.css";
+import "./Performance.css";
 
 const TeacherPerformance = () => {
   const [selectedClass, setSelectedClass] = useState(null);
@@ -56,10 +56,10 @@ const TeacherPerformance = () => {
       // Group by class
       const classMap = {};
       assignments.forEach(a => {
-        if (!classMap[a.className]) {
-          classMap[a.className] = {
-            id: a.className,
-            name: a.className,
+        if (!classMap[a.classId]) {
+          classMap[a.classId] = {
+            id: a.classId, // Use classId (ObjectId) instead of className
+            name: a.className, // Display name is still className
             subject: a.subjectName,
             assignmentId: a.id,
             studentCount: 0
@@ -80,7 +80,7 @@ const TeacherPerformance = () => {
     try {
       // Find assignment for this teacher + class
       const resp = await axios.get(`http://localhost:8080/api/v1/teaching-assignments/teacher/${teacherId}`);
-      const assignment = resp.data.find(a => a.className === classItem.id);
+      const assignment = resp.data.find(a => a.classId === classItem.id);
       
       if (assignment) {
         setCurrentAssignment(assignment);

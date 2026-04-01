@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,6 +32,7 @@ public class StudentServiceImpl implements StudentService {
     private final StudentClassRepository studentClassRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final TeachingAssignmentRepository teachingAssignmentRepository;
+    private final SubjectRepository subjectRepository;
     private final AttendanceRepository attendanceRepository;
     private final AttendanceSessionRepository attendanceSessionRepository;
     private final TeacherRepository teacherRepository;
@@ -52,8 +54,17 @@ public class StudentServiceImpl implements StudentService {
         String simpleName = ClassNameUtils.parseClassSimpleName(key);
         if (grade == null || simpleName == null || simpleName.isBlank()) return null;
 
-        SchoolClass byGradeAndName = schoolClassRepository.findByGradeLevelAndClassNameIgnoreCase(grade, simpleName).orElse(null);
-        if (byGradeAndName != null) return byGradeAndName;
+        // Fix: Handle multiple results - take the first one
+        try {
+            SchoolClass byGradeAndName = schoolClassRepository.findByGradeLevelAndClassNameIgnoreCase(grade, simpleName).orElse(null);
+            if (byGradeAndName != null) return byGradeAndName;
+        } catch (IncorrectResultSizeDataAccessException e) {
+            log.warn("Multiple SchoolClass records found for grade={}, className={}, taking first one", grade, simpleName);
+            List<SchoolClass> allMatches = schoolClassRepository.findAllByGradeLevelAndClassNameIgnoreCase(grade, simpleName);
+            if (!allMatches.isEmpty()) {
+                return allMatches.get(0);
+            }
+        }
 
         // Tolerant fallbacks for inconsistent datasets:
         // - some store className as "A1" but gradeLevel is stored with an unexpected type (string/number mismatch)
@@ -119,10 +130,30 @@ public class StudentServiceImpl implements StudentService {
         if (user.getRole() == Role.STUDENT) {
             // Mongoose commonly stores userId as ObjectId, while this Java model uses String.
             // To stay compatible with seeded demo data (username like "HS001"), fall back to lookups by id/code.
-            Student student = studentRepository.findByUserId(user.getId())
-                    .or(() -> studentRepository.findById(user.getUsername()))
-                    .or(() -> studentRepository.findByStudentCode(user.getUsername()))
-                    .orElseThrow(() -> new RuntimeException("Thông tin học sinh không tồn tại"));
+            log.info("Looking up student for userId={}, username={}", user.getId(), user.getUsername());
+            
+            Student student = studentRepository.findByUserId(user.getId()).orElse(null);
+            if (student == null) {
+                student = studentRepository.findById(user.getUsername()).orElse(null);
+            }
+            if (student == null) {
+                student = studentRepository.findByStudentCodeIgnoreCase(user.getUsername()).orElse(null);
+            }
+            
+            if (student == null) {
+                // AUTO-FIX: If student profile is missing but user exists, create one
+                log.warn("Student profile missing for user {}. Creating one...", user.getUsername());
+                student = new Student();
+                student.setUserId(user.getId());
+                student.setStudentCode(user.getUsername());
+                student.setFullName(user.getUsername());
+                student = studentRepository.save(student);
+            } else if (student.getUserId() == null || !student.getUserId().equals(user.getId())) {
+                // AUTO-FIX: Link existing student profile to correct user ID
+                log.info("Updating existing student profile {} with userId {}", student.getStudentCode(), user.getId());
+                student.setUserId(user.getId());
+                student = studentRepository.save(student);
+            }
 
             builder.studentId(student.getId())
                     .studentCode(student.getStudentCode())
@@ -224,12 +255,15 @@ public class StudentServiceImpl implements StudentService {
             
             log.info("Total assignments in DB: {}", allAssignments.size());
             
+            // Find the SchoolClass to get the proper classId
+            SchoolClass resolvedClass = resolveSchoolClassByIdOrName(sc.getClassId());
+            final String schoolClassId = resolvedClass != null ? resolvedClass.getId() : sc.getClassId();
+            
             List<TeachingAssignment> assignments = allAssignments.stream()
                     .filter(a -> {
                         if (a == null) return false;
-                        if (a.getClassName() == null) return false;
-                        String normalized = ClassNameUtils.normalizeToKey(a.getClassName());
-                        return normalized.equals(studentClassKey);
+                        if (a.getClassId() == null) return false;
+                        return a.getClassId().equals(schoolClassId);
                     })
                     .collect(Collectors.toList());
             log.info("Found {} assignments for classKey={}", assignments.size(), studentClassKey);
@@ -238,7 +272,9 @@ public class StudentServiceImpl implements StudentService {
             for (TeachingAssignment assignment : assignments) {
                 Map<String, Object> map = new HashMap<>();
                 map.put("assignmentId", assignment.getId());
-                map.put("subjectName", assignment.getSubjectName());
+                
+                Subject subject = subjectRepository.findById(assignment.getSubjectId()).orElse(null);
+                map.put("subjectName", subject != null ? subject.getSubjectName() : "N/A");
 
                 Teacher teacher = teacherRepository.findById(assignment.getTeacherId()).orElse(null);
                 map.put("teacherName", teacher != null ? teacher.getFullName() : "N/A");
@@ -351,6 +387,89 @@ public class StudentServiceImpl implements StudentService {
             throw new RuntimeException("Failed to read Excel data: " + e.getMessage());
         }
     }
+
+    @Override
+    public void importStudentsFromExcelWithClass(MultipartFile file, String classId) {
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
+            
+            // Resolve SchoolClass từ classId
+            SchoolClass schoolClass = resolveSchoolClassByIdOrName(classId);
+            String finalClassId = schoolClass != null ? schoolClass.getId() : classId;
+            String academicYearId = schoolClass != null ? schoolClass.getAcademicYearId() : null;
+
+            int rowNumber = 0;
+            while (rows.hasNext()) {
+                Row currentRow = rows.next();
+                if (rowNumber == 0) {
+                    rowNumber++;
+                    continue; // Skip header row
+                }
+
+                String studentCode = getCellValueSafely(currentRow.getCell(0));
+                String fullName = getCellValueSafely(currentRow.getCell(1));
+                String gender = getCellValueSafely(currentRow.getCell(3));
+                String phone = getCellValueSafely(currentRow.getCell(4));
+                String email = getCellValueSafely(currentRow.getCell(5));
+                String address = getCellValueSafely(currentRow.getCell(6));
+
+                if (studentCode.isEmpty() || fullName.isEmpty()) {
+                    continue; // Skip invalid rows
+                }
+
+                // Tìm hoặc tạo Student
+                Student student = studentRepository.findByStudentCode(studentCode).orElse(null);
+                if (student == null) {
+                    student = new Student();
+                    student.setStudentCode(studentCode);
+                    
+                    // Create User account if not exists
+                    if (userRepository.findByUsername(studentCode).isEmpty()) {
+                        User newUser = new User();
+                        newUser.setUsername(studentCode);
+                        newUser.setPassword("123456");
+                        newUser.setRole(Role.STUDENT);
+                        newUser.setActive(true);
+                        newUser = userRepository.save(newUser);
+                        student.setUserId(newUser.getId());
+                    } else {
+                        student.setUserId(userRepository.findByUsername(studentCode).get().getId());
+                    }
+                }
+                student.setFullName(fullName);
+                student.setGender(gender);
+
+                if (currentRow.getCell(2) != null && currentRow.getCell(2).getCellType() == CellType.NUMERIC) {
+                    student.setDateOfBirth(currentRow.getCell(2).getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+                }
+
+                Contact contact = student.getContact() != null ? student.getContact() : new Contact();
+                contact.setPhone(phone);
+                contact.setEmail(email);
+                contact.setAddress(address);
+                student.setContact(contact);
+
+                // Lưu student trước để có id
+                student = studentRepository.save(student);
+
+                // Kiểm tra và tạo StudentClass nếu chưa tồn tại
+                List<StudentClass> existingStudentClasses = studentClassRepository.findByStudentId(student.getId());
+                boolean alreadyInClass = existingStudentClasses.stream()
+                        .anyMatch(sc -> sc.getClassId().equals(finalClassId));
+                
+                if (!alreadyInClass) {
+                    StudentClass studentClass = new StudentClass();
+                    studentClass.setStudentId(student.getId());
+                    studentClass.setClassId(finalClassId);
+                    studentClass.setAcademicYearId(academicYearId);
+                    studentClassRepository.save(studentClass);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read Excel data: " + e.getMessage());
+        }
+    }
     private String getCellValueSafely(Cell cell) {
         if (cell == null) return "";
         switch (cell.getCellType()) {
@@ -372,7 +491,7 @@ public class StudentServiceImpl implements StudentService {
 
             // Header
             Row headerRow = sheet.createRow(0);
-            String[] columns = {"Mã SV", "Họ Tên", "Ngày Sinh", "Giới Tính", "Số Điện Thoại", "Email", "Địa Chỉ"};
+            String[] columns = {"Mã SV", "Họ Tên", "Ngày Sinh", "Giới Tính", "Số Điện Thoại", "Email", "Địa Chỉ", "Lớp"};
             for (int i = 0; i < columns.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(columns[i]);
@@ -404,6 +523,20 @@ public class StudentServiceImpl implements StudentService {
                     row.createCell(5).setCellValue("");
                     row.createCell(6).setCellValue("");
                 }
+
+                // Add Class Info
+                List<StudentClass> scs = studentClassRepository.findByStudentId(student.getId());
+                if (!scs.isEmpty()) {
+                    StudentClass sc = scs.get(scs.size() - 1);
+                    SchoolClass schoolClass = resolveSchoolClassByIdOrName(sc.getClassId());
+                    if (schoolClass != null) {
+                        row.createCell(7).setCellValue(ClassNameUtils.formatDisplayClassName(schoolClass.getGradeLevel(), schoolClass.getClassName()));
+                    } else {
+                        row.createCell(7).setCellValue(sc.getClassId());
+                    }
+                } else {
+                    row.createCell(7).setCellValue("");
+                }
             }
 
             workbook.write(out);
@@ -416,6 +549,23 @@ public class StudentServiceImpl implements StudentService {
     public Student getStudentById(String id) {
         return studentRepository.findById(id)
                 .orElseGet(() -> studentRepository.findByStudentCode(id).orElse(null));
+    }
+
+    @Override
+    public Student getStudentByUserId(String userId) {
+        Student student = studentRepository.findByUserId(userId).orElse(null);
+        if (student == null) {
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                student = studentRepository.findByStudentCodeIgnoreCase(user.getUsername()).orElse(null);
+            }
+        }
+        
+        if (student == null) {
+            throw new RuntimeException("Student not found with userId: " + userId);
+        }
+        return student;
     }
 
     @Override
@@ -474,21 +624,35 @@ public class StudentServiceImpl implements StudentService {
         log.info("getStudentsByClass called with className='{}', classKey='{}', gradeLevel={}, classSimpleName='{}'", 
                  raw, classKey, gradeLevel, classSimpleName);
 
-        // Prefer querying student_classes by label first. This is more tolerant of datasets where:
-        // - "classes" rows are missing/inconsistent
-        // - StudentClass.classId stores a human label (e.g. "10A1") instead of SchoolClass.id
         LinkedHashMap<String, StudentClass> unique = new LinkedHashMap<>();
-        List<String> candidates = buildClassIdCandidates(raw, classKey, gradeLevel, classSimpleName);
-        log.info("Built classId candidates: {}", candidates);
         
-        for (String candidate : candidates) {
-            if (candidate == null || candidate.isBlank()) continue;
-            List<StudentClass> found = studentClassRepository.findByClassIdIgnoreCase(candidate);
-            log.info("Query findByClassIdIgnoreCase('{}') returned {} records", candidate, found.size());
-            for (StudentClass sc : found) {
+        // First, try to find by ObjectId if it looks like one (24 chars hex)
+        if (raw.length() == 24 && raw.matches("[a-fA-F0-9]+")) {
+            log.info("Trying to find by ObjectId: {}", raw);
+            List<StudentClass> byObjectId = studentClassRepository.findByClassId(raw);
+            log.info("Query findByClassId('{}') returned {} records", raw, byObjectId.size());
+            for (StudentClass sc : byObjectId) {
                 if (sc != null && sc.getId() != null) {
                     unique.putIfAbsent(sc.getId(), sc);
-                    log.info("Found StudentClass: id={}, studentId={}, classId={}", sc.getId(), sc.getStudentId(), sc.getClassId());
+                    log.info("Found StudentClass by ObjectId: id={}, studentId={}, classId={}", sc.getId(), sc.getStudentId(), sc.getClassId());
+                }
+            }
+        }
+        
+        // If not found by ObjectId, try by class name/label
+        if (unique.isEmpty()) {
+            List<String> candidates = buildClassIdCandidates(raw, classKey, gradeLevel, classSimpleName);
+            log.info("Built classId candidates: {}", candidates);
+            
+            for (String candidate : candidates) {
+                if (candidate == null || candidate.isBlank()) continue;
+                List<StudentClass> found = studentClassRepository.findByClassIdIgnoreCase(candidate);
+                log.info("Query findByClassIdIgnoreCase('{}') returned {} records", candidate, found.size());
+                for (StudentClass sc : found) {
+                    if (sc != null && sc.getId() != null) {
+                        unique.putIfAbsent(sc.getId(), sc);
+                        log.info("Found StudentClass: id={}, studentId={}, classId={}", sc.getId(), sc.getStudentId(), sc.getClassId());
+                    }
                 }
             }
         }
@@ -531,6 +695,11 @@ public class StudentServiceImpl implements StudentService {
             studentMap.put("studentCode", student.getStudentCode());
             studentMap.put("fullName", student.getFullName());
             studentMap.put("className", displayClassName);
+            studentMap.put("gender", student.getGender());
+            studentMap.put("dob", student.getDateOfBirth() != null ? student.getDateOfBirth().toString() : "");
+            studentMap.put("email", student.getContact() != null ? student.getContact().getEmail() : "");
+            studentMap.put("phone", student.getContact() != null ? student.getContact().getPhone() : "");
+            studentMap.put("address", student.getContact() != null ? student.getContact().getAddress() : "");
             studentMap.put("seatRow", sc.getSeatRow());
             studentMap.put("seatColumn", sc.getSeatColumn());
             studentMap.put("notes", sc.getNotes());
@@ -545,17 +714,43 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public void updateStudentSeating(String studentId, String className, Integer row, Integer col, String notes) {
         String classKey = ClassNameUtils.normalizeToKey(className);
-        List<StudentClass> studentClasses = studentClassRepository.findByStudentId(studentId);
         
+        log.info("updateStudentSeating: studentId={}, className={}, classKey={}, row={}, col={}, notes={}", 
+                 studentId, className, classKey, row, col, notes);
+        
+        // Tìm tất cả StudentClass của học sinh này
+        List<StudentClass> studentClasses = studentClassRepository.findByStudentId(studentId);
+        log.info("Found {} StudentClass records for studentId={}", studentClasses.size(), studentId);
+        
+        StudentClass targetSc = null;
         for (StudentClass sc : studentClasses) {
-            String scClassKey = ClassNameUtils.normalizeToKey(sc.getClassId());
-            if (scClassKey.equals(classKey)) {
-                if (row != null) sc.setSeatRow(row);
-                if (col != null) sc.setSeatColumn(col);
-                if (notes != null) sc.setNotes(notes);
-                studentClassRepository.save(sc);
-                return;
+            log.info("StudentClass: id={}, classId={}, academicYearId={}, seatRow={}, seatColumn={}", 
+                    sc.getId(), sc.getClassId(), sc.getAcademicYearId(), sc.getSeatRow(), sc.getSeatColumn());
+            
+            // Kiểm tra nếu classId là ObjectId, tìm SchoolClass tương ứng
+            SchoolClass schoolClass = schoolClassRepository.findById(sc.getClassId()).orElse(null);
+            if (schoolClass != null) {
+                String fullClassName = schoolClass.getGradeLevel() + schoolClass.getClassName();
+                if (fullClassName.equalsIgnoreCase(className)) {
+                    targetSc = sc;
+                    log.info("Found matching class: {} (classId={})", fullClassName, sc.getClassId());
+                    break;
+                }
             }
+        }
+        
+        log.info("Found target StudentClass: {}", targetSc != null ? targetSc.getId() : "null");
+        
+        if (targetSc != null) {
+            log.info("Updating seatRow from {} to {}, seatColumn from {} to {}", 
+                     targetSc.getSeatRow(), row, targetSc.getSeatColumn(), col);
+            targetSc.setSeatRow(row);
+            targetSc.setSeatColumn(col);
+            if (notes != null) targetSc.setNotes(notes);
+            studentClassRepository.save(targetSc);
+            log.info("Saved StudentClass: seatRow={}, seatColumn={}", targetSc.getSeatRow(), targetSc.getSeatColumn());
+        } else {
+            log.warn("No matching StudentClass found for studentId={} and classKey={}", studentId, classKey);
         }
     }
 }

@@ -3,6 +3,8 @@ import { BASE_URL } from './config';
 
 const API_URL = `${BASE_URL}/api/v1/announcements`;
 
+// ========== ANNOUNCEMENT APIs ==========
+
 // Get all announcements
 export const getAllAnnouncements = async () => {
     const response = await axios.get(`${API_URL}/getall`);
@@ -33,21 +35,55 @@ export const deleteAnnouncement = async (id) => {
     return response.data;
 };
 
-// Get announcements by class ID - backend chưa có, dùng client filter
-export const getAnnouncementsByClass = async (classId) => {
-    const announcements = await getAllAnnouncements();
-    return announcements;
+// Get announcements by recipient (audience)
+export const getAnnouncementsByAudience = async (targetAudience) => {
+    const response = await axios.get(`${API_URL}/audience/${targetAudience}`);
+    return response.data.announcements || [];
 };
 
-// Get announcements by recipient (student)
+// Get announcements for student
 export const getAnnouncementsForStudent = async (studentId) => {
-    // Note: studentId is passed but we filter by 'students' and 'all' on backend
     const response = await axios.get(`${API_URL}/audience/students`);
     return response.data.announcements || [];
 };
 
-// Get announcements by recipient (teacher)
+// Get announcements for teacher
 export const getAnnouncementsForTeacher = async (teacherId) => {
     const response = await axios.get(`${API_URL}/audience/teachers`);
     return response.data.announcements || [];
 };
+
+// ========== MERGED FROM notificationApi.js ==========
+
+// Get announcements by role (STUDENT, TEACHER, ALL)
+export const getAnnouncementsByRole = async (targetRole) => {
+    const response = await axios.get(`${API_URL}/role/${targetRole}`);
+    return response.data.announcements || [];
+};
+
+// Get announcements by class ID
+export const getAnnouncementsByClass = async (classId) => {
+    const response = await axios.get(`${API_URL}/class/${classId}`);
+    return response.data.announcements || [];
+};
+
+// Get announcements by class and role
+export const getAnnouncementsByClassAndRole = async (classId, targetRole) => {
+    const response = await axios.get(`${API_URL}/class/${classId}/role/${targetRole}`);
+    return response.data.announcements || [];
+};
+
+// Create with auto timestamp (like old notification create)
+export const createAnnouncementWithTimestamp = async (announcementData) => {
+    const response = await axios.post(`${API_URL}/create`, announcementData);
+    return response.data;
+};
+
+// Legacy aliases for backward compatibility
+export const getAllNotifications = getAllAnnouncements;
+export const getNotificationsByRole = getAnnouncementsByRole;
+export const getNotificationsByClass = getAnnouncementsByClass;
+export const getNotificationsByClassAndRole = getAnnouncementsByClassAndRole;
+export const createNotification = createAnnouncement;
+export const deleteNotification = deleteAnnouncement;
+export const updateNotification = updateAnnouncement;

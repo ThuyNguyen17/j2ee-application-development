@@ -1,102 +1,139 @@
-import React, { useState, useEffect } from "react";
-import { Users, GraduationCap, BookOpen, Calendar, TrendingUp } from "lucide-react";
-import "./AdminDashboard.css";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Users, GraduationCap, CalendarDays, Award, Library, MessageSquare, BookOpen, Settings } from "lucide-react";
+import './AdminDashboard.css';
 
-const AdminDashboard = () => {
-  const [counts, setCounts] = useState({ students: 120, teachers: 45, classes: 32 });
-  const [events, setEvents] = useState([]);
-  const [announcements, setAnnouncements] = useState([]);
+export default function AdminDashboard() {
+  const [admin, setAdmin] = useState(null);
+  const navigate = useNavigate();
 
-  // Mock data
   useEffect(() => {
-    setEvents([
-      { id: 1, title: "Khai giảng năm học mới", date: "2026-09-05" },
-      { id: 2, title: "Hội thao trường", date: "2026-10-15" },
-      { id: 3, title: "Ngày Nhà giáo Việt Nam", date: "2026-11-20" },
-    ]);
-    
-    setAnnouncements([
-      { id: 1, title: "Thông báo nghỉ Tết", content: "Lịch nghỉ Tết Nguyên Đán 2026", date: "2026-01-25" },
-      { id: 2, title: "Kế hoạch năm học mới", content: "Kế hoạch tuyển sinh năm 2026-2027", date: "2026-02-01" },
-    ]);
+    try {
+      const raw = localStorage.getItem("user");
+      const u = raw ? JSON.parse(raw) : null;
+      setAdmin(u);
+    } catch {
+      setAdmin(null);
+    }
   }, []);
 
+  if (!admin) return null;
+
   return (
-    <div className="admin-dashboard-container">
-      <div className="page-header">
-        <h1 className="page-title">
-          <TrendingUp size={28} />
-          Admin Dashboard
-        </h1>
-        <p className="page-subtitle">
-          Tổng quan hệ thống quản lý trường học
-        </p>
+    <div className="dashboard-content">
+      <div className="dashboard-header">
+        <h1 className="dashboard-title">Admin Dashboard</h1>
+        <p className="dashboard-subtitle">Chào mừng trở lại, {admin.fullName}!</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card students">
-          <div className="stat-icon">
-            <GraduationCap size={24} />
+      <div className="profile-section">
+        <div className="profile-card">
+          <div className="profile-avatar">
+            <Users size={40} />
           </div>
-          <div className="stat-info">
-            <span className="stat-value">{counts.students}</span>
-            <span className="stat-label">Tổng số học sinh</span>
-          </div>
-        </div>
-        
-        <div className="stat-card teachers">
-          <div className="stat-icon">
-            <Users size={24} />
-          </div>
-          <div className="stat-info">
-            <span className="stat-value">{counts.teachers}</span>
-            <span className="stat-label">Tổng số giáo viên</span>
-          </div>
-        </div>
-        
-        <div className="stat-card classes">
-          <div className="stat-icon">
-            <BookOpen size={24} />
-          </div>
-          <div className="stat-info">
-            <span className="stat-value">{counts.classes}</span>
-            <span className="stat-label">Tổng số lớp học</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Events */}
-      <div className="section">
-        <h2 className="section-title">
-          <Calendar size={20} />
-          Sự kiện sắp tới
-        </h2>
-        <div className="events-list">
-          {events.map(event => (
-            <div key={event.id} className="event-card">
-              <div className="event-date">{event.date}</div>
-              <div className="event-title">{event.title}</div>
+          <div className="profile-info">
+            <h2>{admin.fullName}</h2>
+            <p className="admin-role">Quản trị viên hệ thống</p>
+            <div className="class-badge">
+              <Settings size={16} />
+              <span>Quản trị toàn hệ thống</span>
             </div>
-          ))}
+          </div>
         </div>
       </div>
+      
+      <div className="actions-section">
+        <button className="action-card" onClick={() => navigate('/admin/classes')}>
+          <div className="icon-wrapper">
+            <Users size={32} />
+          </div>
+          <div className="action-text">
+            <h3>Quản lý lớp học</h3>
+            <p>Tạo và quản lý lớp học</p>
+          </div>
+        </button>
 
-      {/* Recent Announcements */}
-      <div className="section">
-        <h2 className="section-title">Thông báo gần đây</h2>
-        <div className="announcements-list">
-          {announcements.map(announcement => (
-            <div key={announcement.id} className="announcement-card">
-              <h3 className="announcement-title">{announcement.title}</h3>
-              <p className="announcement-content">{announcement.content}</p>
-              <span className="announcement-date">{announcement.date}</span>
-            </div>
-          ))}
-        </div>
+        <button className="action-card" onClick={() => navigate('/admin/teachers')}>
+          <div className="icon-wrapper">
+            <Users size={32} />
+          </div>
+          <div className="action-text">
+            <h3>Quản lý giáo viên</h3>
+            <p>Quản lý tài khoản giáo viên</p>
+          </div>
+        </button>
+
+        <button className="action-card" onClick={() => navigate('/admin/students')}>
+          <div className="icon-wrapper">
+            <GraduationCap size={32} />
+          </div>
+          <div className="action-text">
+            <h3>Quản lý sinh viên</h3>
+            <p>Quản lý tài khoản sinh viên</p>
+          </div>
+        </button>
+
+        <button className="action-card" onClick={() => navigate('/admin/exams')}>
+          <div className="icon-wrapper">
+            <Award size={32} />
+          </div>
+          <div className="action-text">
+            <h3>Quản lý kỳ thi</h3>
+            <p>Tổ chức kỳ thi toàn hệ thống</p>
+          </div>
+        </button>
+
+        <button className="action-card" onClick={() => navigate('/admin/library')}>
+          <div className="icon-wrapper">
+            <Library size={32} />
+          </div>
+          <div className="action-text">
+            <h3>Quản lý thư viện</h3>
+            <p>Quản lý tài liệu học tập</p>
+          </div>
+        </button>
+
+        <button className="action-card" onClick={() => navigate('/admin/communication')}>
+          <div className="icon-wrapper">
+            <MessageSquare size={32} />
+          </div>
+          <div className="action-text">
+            <h3>Quản lý thông báo</h3>
+            <p>Gửi thông báo toàn hệ thống</p>
+          </div>
+        </button>
+
+        <button className="action-card" onClick={() => navigate('/admin/events')}>
+          <div className="icon-wrapper">
+            <CalendarDays size={32} />
+          </div>
+          <div className="action-text">
+            <h3>Quản lý sự kiện</h3>
+            <p>Tổ chức sự kiện trường học</p>
+          </div>
+        </button>
+
+        <button className="action-card" onClick={() => navigate('/admin/seating-chart')}>
+          <div className="icon-wrapper">
+            <GraduationCap size={32} />
+          </div>
+          <div className="action-text">
+            <h3>Quản lý sơ đồ lớp</h3>
+            <p>Sắp xếp vị trí chỗ ngồi</p>
+          </div>
+        </button>
+
+        <button className="action-card" onClick={() => navigate('/admin/teaching-assignments')}>
+          <div className="icon-wrapper">
+            <BookOpen size={32} />
+          </div>
+          <div className="action-text">
+            <h3>Phân công giảng dạy</h3>
+            <p>Phân công giáo viên vào lớp</p>
+          </div>
+        </button>
       </div>
     </div>
   );
-};
+}
 
-export default AdminDashboard;

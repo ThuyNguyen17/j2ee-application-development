@@ -1,7 +1,6 @@
 import axios from 'axios';
+import { BASE_URL } from './config';
 
-// Sử dụng IP của server backend
-const BASE_URL = 'http://localhost:8080';
 const API_URL = `${BASE_URL}/api/v1/library`;
 
 // Get all books

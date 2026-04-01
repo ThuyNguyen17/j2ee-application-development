@@ -5,6 +5,7 @@ import com.example.project_management_class.domain.model.Announcement;
 import com.example.project_management_class.domain.repository.AnnouncementRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -25,6 +26,28 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     @Override
     public List<Announcement> getAnnouncementsByAudiences(List<String> audiences) {
         return announcementRepository.findByTargetAudienceIn(audiences);
+    }
+
+    // Merged from NotificationService
+    @Override
+    public void createAnnouncement(Announcement announcement) {
+        announcement.setCreatedAt(LocalDateTime.now());
+        announcementRepository.save(announcement);
+    }
+
+    @Override
+    public List<Announcement> getAnnouncementsByRole(String targetRole) {
+        return announcementRepository.findByTargetRoleOrAll(targetRole);
+    }
+
+    @Override
+    public List<Announcement> getAnnouncementsByClass(String classId) {
+        return announcementRepository.findByClassId(classId);
+    }
+
+    @Override
+    public List<Announcement> getAnnouncementsByClassAndRole(String classId, String targetRole) {
+        return announcementRepository.findByClassIdAndTargetRole(classId, targetRole);
     }
 
     @Override

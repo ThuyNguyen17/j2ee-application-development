@@ -5,6 +5,8 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
+
 @Document(collection = "timetables")
 @Getter
 @Setter
@@ -12,14 +14,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @AllArgsConstructor
 @Builder
 public class Timetable {
-
     @Id
     private String id;
-
     private String teachingAssignmentId;
-    private int week;            // Tuần thứ bao nhiêu (1-35)
-    private DayOfWeek dayOfWeek; // Enum
-    private int period;          // Tiết số (1-10)
+    private int week;            // optional (chỉ để hiển thị nếu cần)
+    private DayOfWeek dayOfWeek; // thứ trong tuần
+    private int period;          // tiết
     private String room;
-    private String note;         // Dạy bù, đổi phòng, nghỉ lễ...
+    private String note;
+    private LocalDate actualDate; // 🔥 QUAN TRỌNG NHẤT
 }

@@ -68,6 +68,11 @@ public class StudentController {
         return ResponseEntity.ok(studentService.getAttendanceDetails(studentId, assignmentId));
     }
 
+    @GetMapping("/by-user/{userId}")
+    public ResponseEntity<Student> getStudentByUserId(@PathVariable String userId) {
+        return ResponseEntity.ok(studentService.getStudentByUserId(userId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Student> getStudentById(@PathVariable String id) {
         return ResponseEntity.ok(studentService.getStudentById(id));
@@ -81,6 +86,23 @@ public class StudentController {
     @PostMapping
     public ResponseEntity<Student> createStudent(@RequestBody Student student) {
         return ResponseEntity.ok(studentService.createStudent(student));
+    }
+
+    @PostMapping(value = "/import-with-class", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> importStudentsWithClass(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("classId") String classId) {
+        try {
+            studentService.importStudentsFromExcelWithClass(file, classId);
+            Map<String, String> successResponse = new HashMap<>();
+            successResponse.put("message", "Import thành công sinh viên vào lớp");
+            return ResponseEntity.ok(successResponse);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Lỗi khi import file: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(errorResponse);
+        }
     }
 
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

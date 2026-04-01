@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { getAssignmentsByStudent, submitAssignment, getMySubmission } from "../../api/assignmentApi";
 import { BASE_URL } from "../../api/config";
+import axios from "axios";
 import "./StudentAssignments.css";
 
 const StudentAssignments = () => {
@@ -51,7 +52,25 @@ const StudentAssignments = () => {
       setLoading(true);
       setError(null);
       const studentId = user.userId || user.id;
-      const className = user.className;
+      let className = user.className;
+      
+      // If no className in user data, try to get from StudentClass API
+      if (!className && studentId) {
+        try {
+          const API_URL = `${BASE_URL}/api`;
+          
+          const scResp = await axios.get(`${API_URL}/student-classes/student/${studentId}/class`);
+          const classInfo = scResp.data;
+          
+          if (classInfo.success && classInfo.className) {
+            className = classInfo.className;
+            console.log("[DEBUG] Found className from API:", className);
+          }
+        } catch (err) {
+          console.log("[DEBUG] Could not get className from API:", err.message);
+        }
+      }
+      
       console.log("[DEBUG] Fetching assignments for Student ID: " + studentId + ", Class: " + className);
       
       const assignmentsData = await getAssignmentsByStudent(studentId, className);

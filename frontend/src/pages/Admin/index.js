@@ -6,3 +6,5 @@ export { default as AdminEventCalendar } from './EventCalendar.jsx';
 export { default as AdminTeachingAssignments } from './TeachingAssignments.jsx';
 export { default as AdminSeatingChart } from './SeatingChart.jsx';
 export { default as AdminClassScores } from './ClassScores.jsx';
+export { default as AdminStudents } from './Students.jsx';
+

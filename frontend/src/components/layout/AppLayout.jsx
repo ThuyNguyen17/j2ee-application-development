@@ -12,7 +12,6 @@ import {
   MessageSquare,
   Settings,
   FileText,
-  Users,
   GraduationCap,
   Calendar,
   Menu,
@@ -41,14 +40,14 @@ export default function AppLayout() {
     const u = readUser();
     setUser(u);
     if (!u) {
-      navigate("/student/login", { replace: true, state: { from: location.pathname } });
+      navigate("/login", { replace: true, state: { from: location.pathname } });
       return;
     }
   }, [location.pathname, navigate]);
 
   const logout = () => {
     localStorage.removeItem("user");
-    navigate("/student/login", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   const toggleSidebar = () => {
@@ -78,7 +77,6 @@ export default function AppLayout() {
         return [
           { to: "/teacher/dashboard", icon: LayoutDashboard, label: "Dashboard" },
           { to: "/teacher/timetable", icon: CalendarDays, label: "Thời khóa biểu" },
-          { to: "/teacher/students", icon: BookOpen, label: "Danh sách sinh viên" },
           { to: "/teacher/assignments", icon: FileText, label: "Quản lý bài tập" },
           { to: "/teacher/performance", icon: BookOpen, label: "Kết quả sinh viên" },
           { to: "/teacher/events", icon: Calendar, label: "Sự kiện" },
@@ -91,6 +89,7 @@ export default function AppLayout() {
         return [
           { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
           { to: "/admin/library", icon: Library, label: "Quản lý thư viện" },
+          { to: "/admin/students", icon: BookOpen, label: "Danh sách sinh viên" },
           { to: "/admin/communication", icon: MessageSquare, label: "Quản lý thông báo" },
           { to: "/admin/events", icon: Calendar, label: "Quản lý sự kiện" },
           { to: "/admin/seating-chart", icon: GraduationCap, label: "Quản lý sơ đồ lớp" },
@@ -106,7 +105,7 @@ export default function AppLayout() {
   const roleLabel = user?.role || "UNKNOWN";
 
   // Don't show layout for login page
-  if (location.pathname === '/student/login' || location.pathname === '/') {
+  if (location.pathname === '/login' || location.pathname === '/') {
     return <Outlet />;
   }
 

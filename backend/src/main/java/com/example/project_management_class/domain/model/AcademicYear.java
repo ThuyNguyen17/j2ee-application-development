@@ -16,5 +16,7 @@ public class AcademicYear {
     private String name;        // 2024-2025
     private LocalDate startDate;
     private LocalDate endDate;
-    private boolean active;     // năm học hiện tại
+    private boolean active;
+    private LocalDate semester1Start;
+    private LocalDate semester2Start;
 }

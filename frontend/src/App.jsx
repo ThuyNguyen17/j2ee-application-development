@@ -8,7 +8,8 @@ import {
   AdminTeachingAssignments,
   AdminSeatingChart,
   AdminClassScores,
-  AdminDashboard
+  AdminDashboard,
+  AdminStudents
 } from "./pages/Admin/index.js";
 
 import {
@@ -22,11 +23,13 @@ import {
   StudentEvents,
   StudentScores,
   StudentDashboard,
+  StudentTimetable,
+  StudentScanner,
+  AttendanceHistory
 } from "./pages/Students/index.js";
 
 // Teacher pages - imported from Teachers folder index
 import {
-  TeacherStudents,
   TeacherAssignments,
   TeacherAssignmentSubmissions,
   TeacherExams,
@@ -35,15 +38,11 @@ import {
   TeacherEvents,
   TeacherProfile,
   TeacherDashboard,
-  TeacherNotifications,
-  TeacherSeatingChart
+  TeacherSeatingChart,
+  TeacherTimetable
 } from "./pages/Teachers/index.js";
-import StudentTimetable from "./pages/Students/StudentTimetable.jsx";
-import StudentScanner from "./pages/Students/StudentScanner.jsx";
 import SubjectAttendancel from "./pages/SubjectAttendance.jsx";
 import AppLayout from "./components/layout/AppLayout.jsx";
-import AttendanceHistory from "./pages/Students/AttendanceHistory.jsx";
-import TeacherTimetable from "./pages/Teachers/TeacherTimetable.jsx";
 import Login from "./pages/Login.jsx";
 
 export default function App() {
@@ -74,14 +73,12 @@ export default function App() {
         <Route path="/teacher" element={<Navigate to="dashboard" replace />} />
         <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
         <Route path="/teacher/timetable" element={<TeacherTimetable />} />
-        <Route path="/teacher/students" element={<TeacherStudents />} />
         <Route path="/teacher/assignments" element={<TeacherAssignments />} />
         <Route path="/teacher/assignments/:assignmentId/submissions" element={<TeacherAssignmentSubmissions />} />
         <Route path="/teacher/exams" element={<TeacherExams />} />
         <Route path="/teacher/performance" element={<TeacherPerformance />} />
         <Route path="/teacher/events" element={<TeacherEvents />} />
         <Route path="/teacher/communication" element={<TeacherAnnouncements />} />
-        <Route path="/teacher/notifications" element={<TeacherNotifications />} />
         <Route path="/teacher/seating-chart" element={<TeacherSeatingChart />} />
         <Route path="/teacher/settings" element={<TeacherProfile />} />
 
@@ -89,6 +86,7 @@ export default function App() {
         <Route path="/admin" element={<Navigate to="dashboard" replace />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/library" element={<AdminLibrary />} />
+        <Route path="/admin/students" element={<AdminStudents />} />
         <Route path="/admin/communication" element={<AdminAnnouncements />} />
         <Route path="/admin/events" element={<AdminEventCalendar />} />
         <Route path="/admin/seating-chart" element={<AdminSeatingChart />} />

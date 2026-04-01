@@ -2,6 +2,7 @@ package com.example.project_management_class.presentation.controller;
 
 import com.example.project_management_class.application.service.SchoolClassService;
 import com.example.project_management_class.domain.model.SchoolClass;
+import com.example.project_management_class.application.dto.SchoolClassDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +28,7 @@ public class SchoolClassController {
 
     @GetMapping("/getall")
     public ResponseEntity<Map<String, Object>> getAllClasses() {
-        List<SchoolClass> classes = schoolClassService.getAllClasses();
+        List<SchoolClassDTO> classes = schoolClassService.getAllClasses();
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("classes", classes);

@@ -46,12 +46,6 @@ public class EventServiceImpl implements EventService {
     public List<Event> getEventsByType(String eventType) {
         return eventRepository.findByEventTypeAndIsActiveTrueOrderByDateAsc(eventType);
     }
-
-    @Override
-    public List<Event> getEventsByAudience(String targetAudience) {
-        return eventRepository.findByTargetAudienceAndIsActiveTrueOrderByDateAsc(targetAudience);
-    }
-
     @Override
     public List<Event> getEventsByAudiences(List<String> audiences) {
         return eventRepository.findByTargetAudienceInAndIsActiveTrueOrderByDateAsc(audiences);

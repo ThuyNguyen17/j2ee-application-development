@@ -11,6 +11,5 @@ public interface EventService {
     void deleteEvent(String id);
     List<Event> getActiveEvents();
     List<Event> getEventsByType(String eventType);
-    List<Event> getEventsByAudience(String targetAudience);
     List<Event> getEventsByAudiences(List<String> audiences);
 }

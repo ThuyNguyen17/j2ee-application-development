@@ -21,13 +21,6 @@ const ScheduleCell = ({ subject, studentClass, room, note }) => {
                     </div>
                 )}
             </div>
-
-            {note && (
-                <div className="note-row">
-                    <span className="note-icon">📝</span>
-                    <span className="note-info">{note}</span>
-                </div>
-            )}
         </div>
     );
 };

@@ -18,7 +18,7 @@ import {
   deleteExam 
 } from "../../api/examApi";
 import { getClassesByTeacher } from "../../api/classApi";
-import "./TeacherExams.css";
+import "./Exams.css";
 
 const TeacherExams = () => {
   const [exams, setExams] = useState([]);

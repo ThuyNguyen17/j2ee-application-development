@@ -1,10 +1,10 @@
 package com.example.project_management_class.application.serviceImpl;
 
 import com.example.project_management_class.application.service.AssignmentService;
-import com.example.project_management_class.application.service.NotificationService;
+import com.example.project_management_class.application.service.AnnouncementService;
 import com.example.project_management_class.domain.model.Assignment;
-import com.example.project_management_class.domain.model.Notification;
 import com.example.project_management_class.domain.model.Student;
+import com.example.project_management_class.domain.model.Announcement;
 import com.example.project_management_class.domain.model.StudentClass;
 import com.example.project_management_class.domain.repository.AssignmentRepository;
 import com.example.project_management_class.domain.repository.StudentClassRepository;
@@ -25,7 +25,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final AssignmentRepository assignmentRepository;
     private final StudentClassRepository studentClassRepository;
     private final StudentRepository studentRepository;
-    private final NotificationService notificationService;
+    private final AnnouncementService announcementService;
 
     @Override
     public void addAssignment(Assignment assignment) {
@@ -41,22 +41,22 @@ public class AssignmentServiceImpl implements AssignmentService {
         if (assignment.getClasses() != null && !assignment.getClasses().isEmpty()) {
             for (Assignment.ClassInfo classInfo : assignment.getClasses()) {
                 // Create notification for students of this class
-                Notification studentNotification = new Notification();
-                studentNotification.setTitle("Bài tập mới: " + assignment.getTitle());
-                studentNotification.setContent("Giáo viên đã giao bài tập mới: " + assignment.getDescription() + 
+                Announcement studentAnnouncement = new Announcement();
+                studentAnnouncement.setTitle("Bài tập mới: " + assignment.getTitle());
+                studentAnnouncement.setContent("Giáo viên đã giao bài tập mới: " + assignment.getDescription() +
                     ". Hạn nộp: " + assignment.getDeadline());
-                studentNotification.setClassId(classInfo.getId());
-                studentNotification.setTargetRole("STUDENT");
-                notificationService.createNotification(studentNotification);
+                studentAnnouncement.setClassId(classInfo.getId());
+                studentAnnouncement.setTargetRole("STUDENT");
+                announcementService.createAnnouncement(studentAnnouncement);
                 
                 // Create notification for teachers of this class
-                Notification teacherNotification = new Notification();
-                teacherNotification.setTitle("Đã giao bài tập: " + assignment.getTitle());
-                teacherNotification.setContent("Bạn đã giao bài tập '" + assignment.getTitle() + 
+                Announcement teacherAnnouncement = new Announcement();
+                teacherAnnouncement.setTitle("Đã giao bài tập: " + assignment.getTitle());
+                teacherAnnouncement.setContent("Bạn đã giao bài tập '" + assignment.getTitle() +
                     "' cho lớp " + classInfo.getName());
-                teacherNotification.setClassId(classInfo.getId());
-                teacherNotification.setTargetRole("TEACHER");
-                notificationService.createNotification(teacherNotification);
+                teacherAnnouncement.setClassId(classInfo.getId());
+                teacherAnnouncement.setTargetRole("TEACHER");
+                announcementService.createAnnouncement(teacherAnnouncement);
             }
         }
     }
@@ -75,10 +75,17 @@ public class AssignmentServiceImpl implements AssignmentService {
     public List<Assignment> getAssignmentsByStudent(String studentIdInput, String className) {
         System.out.println("[DEBUG] Searching assignments for Student Identifier: " + studentIdInput + ", Class: " + className);
         
-        // Find student profile by input ID (v1: input might be _id or userId)
+        // Find student profile by input ID (v1: input might be _id, userId, or studentCode)
         Optional<Student> studentOpt = studentRepository.findById(studentIdInput);
+        
+        // If not found by ID, try finding by userId
         if (studentOpt.isEmpty()) {
             studentOpt = studentRepository.findByUserId(studentIdInput);
+        }
+        
+        // If still not found, try finding by studentCode
+        if (studentOpt.isEmpty()) {
+            studentOpt = studentRepository.findByStudentCode(studentIdInput);
         }
 
         Set<String> classIdentifiers = new HashSet<>();
@@ -93,8 +100,9 @@ public class AssignmentServiceImpl implements AssignmentService {
         
         if (studentOpt.isPresent()) {
             Student s = studentOpt.get();
-            System.out.println("[DEBUG] Found student profile: " + s.getFullName() + " (SID: " + s.getId() + ", Code: " + s.getStudentCode() + ")");
+            System.out.println("[DEBUG] Found student profile: " + s.getFullName() + " (SID: " + s.getId() + ", Code: " + s.getStudentCode() + ", UserID: " + s.getUserId() + ")");
             if (!studentPotentialIds.contains(s.getId())) studentPotentialIds.add(s.getId());
+            if (s.getUserId() != null && !studentPotentialIds.contains(s.getUserId())) studentPotentialIds.add(s.getUserId());
             if (s.getStudentCode() != null && !studentPotentialIds.contains(s.getStudentCode())) studentPotentialIds.add(s.getStudentCode());
         }
 
