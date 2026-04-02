@@ -3,6 +3,7 @@ import { BASE_URL } from './config';
 
 const API_URL = `${BASE_URL}/api/v1/assignments`;
 const SUBMISSION_API_URL = `${BASE_URL}/api/v1/submissions`;
+const VIOLATION_API_URL = `${BASE_URL}/api/v1/violations`;
 
 // Get all assignments
 export const getAllAssignments = async () => {
@@ -73,4 +74,9 @@ export const gradeSubmission = async (submissionId, score, feedback) => {
         feedback
     });
     return response.data;
+};
+// Get anti-cheat violations by assignment
+export const getViolationsByAssignment = async (assignmentId) => {
+    const response = await axios.get(`${VIOLATION_API_URL}/assignment/${assignmentId}`);
+    return response.data || [];
 };

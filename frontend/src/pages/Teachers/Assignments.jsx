@@ -17,7 +17,9 @@ import {
   Send,
   HelpCircle,
   FileUp,
-  AlignLeft
+  AlignLeft,
+  AlertCircle,
+  ShieldAlert
 } from "lucide-react";
 import { 
   getAssignmentsByTeacher, 
@@ -228,7 +230,8 @@ const TeacherAssignments = () => {
     selectedClasses: [],
     maxScore: 10,
     type: "ESSAY",
-    questions: []
+    questions: [],
+    isStrictMode: false
   });
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -279,6 +282,7 @@ const TeacherAssignments = () => {
       );
       const assignmentData = {
         ...formData,
+        strictMode: formData.isStrictMode,
         classes: selectedClassObjects,
         teacherId,
         submittedCount: 0,
@@ -303,6 +307,7 @@ const TeacherAssignments = () => {
       );
       const assignmentData = {
         ...formData,
+        strictMode: formData.isStrictMode,
         classes: selectedClassObjects
       };
       await updateAssignment(editingAssignment.id, assignmentData);
@@ -338,7 +343,8 @@ const TeacherAssignments = () => {
       selectedClasses: [],
       maxScore: 10,
       type: "ESSAY",
-      questions: []
+      questions: [],
+      isStrictMode: false
     });
   };
 
@@ -351,7 +357,8 @@ const TeacherAssignments = () => {
       selectedClasses: (assignment.classes || []).map(c => c.id || c),
       maxScore: assignment.maxScore || 10,
       type: assignment.type || 'ESSAY',
-      questions: assignment.questions || []
+      questions: assignment.questions || [],
+      isStrictMode: assignment.isStrictMode || assignment.strictMode || false
     });
     setShowCreateModal(true);
   };
@@ -606,6 +613,54 @@ const TeacherAssignments = () => {
                     Upload file
                   </button>
                 </div>
+              </div>
+
+              {/* Strict Mode Toggle */}
+              <div className="form-group" style={{ 
+                background: '#fff9eb', 
+                padding: '12px', 
+                borderRadius: '10px', 
+                border: '1px solid #fee2e2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <label style={{ color: '#991b1b', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                    <AlertCircle size={18} />
+                    Chế độ thi nghiêm túc (Anti-cheat)
+                  </label>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#b91c1c' }}>
+                    Yêu cầu toàn màn hình, ngăn chặn chuyển tab, thoát trang.
+                  </p>
+                </div>
+                <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.isStrictMode}
+                    onChange={(e) => setFormData({...formData, isStrictMode: e.target.checked})}
+                    style={{ opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span className="slider round" style={{
+                    position: 'absolute',
+                    cursor: 'pointer',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: formData.isStrictMode ? '#ef4444' : '#ccc',
+                    transition: '.4s',
+                    borderRadius: '34px'
+                  }}>
+                    <span style={{
+                      position: 'absolute',
+                      content: '""',
+                      height: '18px', width: '18px',
+                      left: formData.isStrictMode ? '28px' : '4px',
+                      bottom: '3px',
+                      backgroundColor: 'white',
+                      transition: '.4s',
+                      borderRadius: '50%'
+                    }}></span>
+                  </span>
+                </label>
               </div>
 
               {/* Quiz Builder - Only show when type is QUIZ */}

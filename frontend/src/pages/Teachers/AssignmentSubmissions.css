@@ -214,6 +214,42 @@
   color: #065f46;
 }
 
+.violation-badge {
+  transition: all 0.2s ease;
+}
+
+.violation-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.violation-badge.has-violations {
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.violation-timeline::-webkit-scrollbar {
+  width: 6px;
+}
+
+.violation-timeline::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.violation-timeline::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.violation-timeline::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 .submission-content {
   background: #f8fafc;
   border-radius: 8px;

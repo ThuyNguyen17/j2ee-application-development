@@ -12,10 +12,17 @@ import {
   Search,
   Filter,
   Send,
-  Clock
+  Clock,
+  ShieldAlert,
+  AlertTriangle,
+  ExternalLink
 } from "lucide-react";
-import { getSubmissionsByAssignment, gradeSubmission } from "../../api/assignmentApi";
-import { getAssignmentById } from "../../api/assignmentApi";
+import { 
+  getSubmissionsByAssignment, 
+  gradeSubmission,
+  getAssignmentById,
+  getViolationsByAssignment
+} from "../../api/assignmentApi";
 import { BASE_URL } from "../../api/config";
 import "./AssignmentSubmissions.css";
 
@@ -29,11 +36,13 @@ const AssignmentSubmissions = () => {
   const navigate = useNavigate();
   const [assignment, setAssignment] = useState(null);
   const [submissions, setSubmissions] = useState([]);
+  const [violations, setViolations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all"); // all, submitted, graded
   const [gradingSubmission, setGradingSubmission] = useState(null);
+  const [viewingViolations, setViewingViolations] = useState(null); // student object
   const [gradeScore, setGradeScore] = useState("");
   const [gradeFeedback, setGradeFeedback] = useState("");
 
@@ -46,12 +55,14 @@ const AssignmentSubmissions = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [assignmentData, submissionsData] = await Promise.all([
+      const [assignmentData, submissionsData, violationsData] = await Promise.all([
         getAssignmentById(assignmentId),
-        getSubmissionsByAssignment(assignmentId)
+        getSubmissionsByAssignment(assignmentId),
+        getViolationsByAssignment(assignmentId)
       ]);
       setAssignment(assignmentData);
       setSubmissions(submissionsData);
+      setViolations(violationsData || []);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError("Không thể tải dữ liệu. Vui lòng thử lại.");
@@ -212,12 +223,42 @@ const AssignmentSubmissions = () => {
                     </span>
                   </div>
                 </div>
-                <div className={`status-badge ${submission.status}`}>
-                  {submission.status === "graded" ? (
-                    <><CheckCircle size={14} /> Đã chấm</>
-                  ) : (
-                    <><Clock size={14} /> Chờ chấm</>
+                <div className="status-badges" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  {(assignment?.isStrictMode || assignment?.strictMode || 
+                    assignment?.title?.toLowerCase().includes('test') || 
+                    assignment?.title?.toLowerCase().includes('thi') || 
+                    assignment?.title?.toLowerCase().includes('thy')) && (
+                    <div 
+                      className={`violation-badge ${violations.filter(v => v.userId === submission.studentId).length > 0 ? "has-violations" : "clean"}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setViewingViolations(submission);
+                      }}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        background: violations.filter(v => v.userId === submission.studentId).length > 0 ? '#fef2f2' : '#f0fdf4',
+                        color: violations.filter(v => v.userId === submission.studentId).length > 0 ? '#ef4444' : '#22c55e',
+                        border: `1px solid ${violations.filter(v => v.userId === submission.studentId).length > 0 ? '#fee2e2' : '#dcfce7'}`
+                      }}
+                    >
+                      <ShieldAlert size={14} />
+                      {violations.filter(v => v.userId === submission.studentId).length} Vi phạm
+                    </div>
                   )}
+                  <div className={`status-badge ${submission.status}`}>
+                    {submission.status === "graded" ? (
+                      <><CheckCircle size={14} /> Đã chấm</>
+                    ) : (
+                      <><Clock size={14} /> Chờ chấm</>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -410,6 +451,92 @@ const AssignmentSubmissions = () => {
               <button className="submit-btn" onClick={handleGrade}>
                 <Star size={16} /> Lưu điểm
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Violation Modal */}
+      {viewingViolations && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <ShieldAlert size={24} color="#ef4444" />
+                Lịch sử vi phạm: {viewingViolations.studentName}
+              </h2>
+              <button className="close-btn" onClick={() => setViewingViolations(null)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="violation-summary" style={{ 
+                background: '#fef2f2', 
+                border: '1px solid #fee2e2', 
+                padding: '12px', 
+                borderRadius: '8px',
+                marginBottom: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <AlertTriangle size={32} color="#ef4444" />
+                <div>
+                  <h4 style={{ margin: 0, color: '#991b1b' }}>Phát hiện {violations.filter(v => v.userId === viewingViolations.studentId).length} hành vi bất thường</h4>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#b91c1c' }}>
+                    Hệ thống ghi lại các thời điểm sinh viên thoát chế độ toàn màn hình hoặc chuyển tab.
+                  </p>
+                </div>
+              </div>
+
+              <div className="violation-timeline" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                {violations.filter(v => v.userId === viewingViolations.studentId).length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                    <CheckCircle size={48} style={{ margin: '0 auto 10px', color: '#22c55e' }} />
+                    <p>Không ghi nhận vi phạm nào</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {violations
+                      .filter(v => v.userId === viewingViolations.studentId)
+                      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                      .map((log, idx) => (
+                        <div key={idx} style={{ 
+                          padding: '12px', 
+                          background: 'white', 
+                          border: '1px solid #e2e8f0', 
+                          borderRadius: '8px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}>
+                          <div>
+                            <span style={{ 
+                              fontWeight: '600', 
+                              color: '#ef4444', 
+                              display: 'block',
+                              fontSize: '14px'
+                            }}>
+                              {log.violationType === 'TAB_SWITCH' ? 'Chuyển Tab / Thoát Trang' : 
+                               log.violationType === 'FULLSCREEN_EXIT' ? 'Thoát Toàn Màn Hình' : 
+                               log.violationType === 'DEVTOOLS_OPEN' ? 'Mở Developer Tools' : 
+                               log.violationType || 'Vi phạm bảo mật'}
+                            </span>
+                            <span style={{ fontSize: '13px', color: '#64748b' }}>{log.details}</span>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontSize: '12px', color: '#94a3b8', display: 'block' }}>
+                              {new Date(log.timestamp).toLocaleDateString()}
+                            </span>
+                            <span style={{ fontSize: '14px', fontWeight: '500', color: '#475569' }}>
+                              {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="submit-btn" onClick={() => setViewingViolations(null)}>Đã xem</button>
             </div>
           </div>
         </div>

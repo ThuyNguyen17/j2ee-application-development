@@ -1,24 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { 
-  FileText, 
+import {
+  FileText,
   Calendar,
-  CheckCircle,
-  Clock,
   BookOpen,
   Send,
   Star,
   MessageSquare,
   AlertCircle,
-  User,
-  HelpCircle,
   Upload,
   FileUp,
-  AlignLeft,
-  Check
+  ShieldAlert
 } from "lucide-react";
 import { getAssignmentsByStudent, submitAssignment, getMySubmission } from "../../api/assignmentApi";
 import { BASE_URL } from "../../api/config";
 import axios from "axios";
+import SeriousExamContainer from "./SeriousExamContainer";
+import "./SeriousExamContainer.css";
 import "./StudentAssignments.css";
 
 const StudentAssignments = () => {
@@ -53,15 +50,15 @@ const StudentAssignments = () => {
       setError(null);
       const studentId = user.userId || user.id;
       let className = user.className;
-      
+
       // If no className in user data, try to get from StudentClass API
       if (!className && studentId) {
         try {
           const API_URL = `${BASE_URL}/api`;
-          
+
           const scResp = await axios.get(`${API_URL}/student-classes/student/${studentId}/class`);
           const classInfo = scResp.data;
-          
+
           if (classInfo.success && classInfo.className) {
             className = classInfo.className;
             console.log("[DEBUG] Found className from API:", className);
@@ -70,16 +67,16 @@ const StudentAssignments = () => {
           console.log("[DEBUG] Could not get className from API:", err.message);
         }
       }
-      
+
       console.log("[DEBUG] Fetching assignments for Student ID: " + studentId + ", Class: " + className);
-      
+
       const assignmentsData = await getAssignmentsByStudent(studentId, className);
       console.log("[DEBUG] API Response:", assignmentsData);
-      
+
       if (!assignmentsData || assignmentsData.length === 0) {
         console.log("[DEBUG] No assignments returned from API");
       }
-      
+
       const submissionsMap = {};
       for (const assignment of assignmentsData || []) {
         try {
@@ -91,7 +88,7 @@ const StudentAssignments = () => {
           console.log("No submission for assignment", assignment.id);
         }
       }
-      
+
       setAssignments(assignmentsData || []);
       setSubmissions(submissionsMap);
     } catch (err) {
@@ -104,6 +101,7 @@ const StudentAssignments = () => {
 
   const openSubmitModal = (assignment) => {
     setSelectedAssignment(assignment);
+    console.log("[DEBUG] Opening assignment:", assignment.title, "Strict Mode:", assignment.isStrictMode || assignment.strictMode);
     setSubmitContent("");
     setQuizAnswers({});
     setUploadedFiles([]);
@@ -118,7 +116,7 @@ const StudentAssignments = () => {
         const exists = current.includes(optionIndex);
         return {
           ...prev,
-          [questionIndex]: exists 
+          [questionIndex]: exists
             ? current.filter(i => i !== optionIndex)
             : [...current, optionIndex]
         };
@@ -131,19 +129,19 @@ const StudentAssignments = () => {
 
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
-    
+
     for (const file of files) {
       try {
         const formData = new FormData();
         formData.append('file', file);
-        
+
         const response = await fetch(`${BASE_URL}/api/v1/files/upload`, {
           method: 'POST',
           body: formData
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
           setUploadedFiles(prev => [...prev, {
             name: result.originalFileName,
@@ -188,31 +186,31 @@ const StudentAssignments = () => {
 
     try {
       setSubmitting({ ...submitting, [selectedAssignment.id]: true });
-      
+
       const submissionData = {
         assignmentId: selectedAssignment.id,
         studentId: studentId,
         studentName: studentName,
         content: selectedAssignment.type === 'ESSAY' ? submitContent : "",
         classId: user.classId || "",
-        quizAnswers: selectedAssignment.type === 'QUIZ' 
+        quizAnswers: selectedAssignment.type === 'QUIZ'
           ? Object.entries(quizAnswers).map(([questionIndex, selectedOptions]) => ({
-              questionIndex: parseInt(questionIndex),
-              selectedOptions
-            }))
+            questionIndex: parseInt(questionIndex),
+            selectedOptions
+          }))
           : null,
-        submittedFiles: selectedAssignment.type === 'UPLOAD' 
-          ? uploadedFiles.map(f => ({ 
-              fileName: f.fileName || f.name, 
-              fileType: f.type, 
-              fileSize: f.size,
-              fileUrl: f.url
-            }))
+        submittedFiles: selectedAssignment.type === 'UPLOAD'
+          ? uploadedFiles.map(f => ({
+            fileName: f.fileName || f.name,
+            fileType: f.type,
+            fileSize: f.size,
+            fileUrl: f.url
+          }))
           : null
       };
-      
+
       await submitAssignment(submissionData);
-      
+
       alert("Nộp bài thành công!");
       setShowSubmitModal(false);
       fetchAssignmentsWithSubmissions();
@@ -222,6 +220,103 @@ const StudentAssignments = () => {
     } finally {
       setSubmitting({ ...submitting, [selectedAssignment.id]: false });
     }
+  };
+
+  const renderModalBody = () => {
+    if (!selectedAssignment) return null;
+    return (
+      <>
+        {/* QUIZ Type */}
+        {selectedAssignment.type === 'QUIZ' && selectedAssignment.questions && (
+          <div className="quiz-section">
+            <p className="quiz-instruction">Trả lời các câu hỏi bên dưới:</p>
+            {selectedAssignment.questions.map((question, qIndex) => (
+              <div key={qIndex} className="quiz-question">
+                <p className="question-text">
+                  <span className="q-number">Câu {qIndex + 1}:</span> {question.content}
+                  <span className="q-points">({question.points || 1} điểm)</span>
+                </p>
+                <div className="options-list">
+                  {question.options.map((option, oIndex) => {
+                    const optionId = `asgn-${selectedAssignment.id}-q-${qIndex}-o-${oIndex}`;
+                    const isSelected = (quizAnswers[qIndex] || []).includes(oIndex);
+
+                    return (
+                      <label key={oIndex} htmlFor={optionId} className={`option-label ${isSelected ? 'selected' : ''}`}>
+                        <input
+                          id={optionId}
+                          className="option-input"
+                          type={question.type === 'MULTIPLE_CHOICE' ? 'checkbox' : 'radio'}
+                          name={`question_${qIndex}`}
+                          checked={isSelected}
+                          onChange={() => handleQuizAnswer(qIndex, oIndex, question.type === 'MULTIPLE_CHOICE')}
+                        />
+                        <span className="option-text">{option.content}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* UPLOAD Type */}
+        {selectedAssignment.type === 'UPLOAD' && (
+          <div className="upload-section">
+            <div className="upload-area" onClick={() => document.getElementById(`file-upload-${selectedAssignment.id}`).click()}>
+              <input
+                id={`file-upload-${selectedAssignment.id}`}
+                type="file"
+                multiple
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
+              />
+              <div className="upload-placeholder">
+                <Upload size={48} color="var(--primary)" />
+                <p>Click hoặc kéo thả file vào đây để nộp bài</p>
+                <p style={{ fontSize: '0.8rem', marginTop: '0.25rem', opacity: 0.7 }}>Hỗ trợ nhiều định dạng file</p>
+              </div>
+            </div>
+            {uploadedFiles.length > 0 && (
+              <div className="uploaded-files" style={{ marginTop: '2rem' }}>
+                <p className="input-label">Files đã chọn:</p>
+                {uploadedFiles.map((file, index) => (
+                  <div key={index} className="file-item">
+                    <div className="file-info">
+                      <FileUp size={20} color="var(--primary)" />
+                      <span>{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
+                    </div>
+                    <button className="remove-file-btn" onClick={() => removeUploadedFile(index)} title="Gỡ file">×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ESSAY Type (default) */}
+        {(!selectedAssignment.type || selectedAssignment.type === 'ESSAY') && (
+          <div className="form-group">
+            <label className="input-label">Nội dung bài làm</label>
+            <textarea
+              className="essay-textarea"
+              value={submitContent}
+              onChange={(e) => setSubmitContent(e.target.value)}
+              placeholder="Nhập câu trả lời hoặc nội dung bài làm của bạn..."
+              rows={15}
+            />
+          </div>
+        )}
+      </>
+    );
+  };
+
+  const isSubmitDisabled = () => {
+    if (!selectedAssignment) return true;
+    if (selectedAssignment.type === 'QUIZ') return Object.keys(quizAnswers).length === 0;
+    if (selectedAssignment.type === 'UPLOAD') return uploadedFiles.length === 0;
+    return !submitContent.trim();
   };
 
   const getAssignmentStatus = (assignment) => {
@@ -275,71 +370,35 @@ const StudentAssignments = () => {
         <p className="page-subtitle">Danh sách bài tập được giao</p>
       </div>
 
-      <div className="filter-tabs" style={{ 
-        display: 'flex', 
-        gap: '12px', 
-        marginBottom: '24px',
-        background: 'white',
-        padding: '8px',
-        borderRadius: '12px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-      }}>
-        <button 
-          className={filter === "all" ? "active" : ""} 
+      <div className="filter-tabs">
+        <button
+          className={filter === "all" ? "active" : ""}
           onClick={() => setFilter("all")}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '8px',
-            border: 'none',
-            background: filter === "all" ? '#0ea5e9' : 'transparent',
-            color: filter === "all" ? 'white' : '#64748b',
-            cursor: 'pointer',
-            fontWeight: '600',
-            transition: 'all 0.2s'
-          }}
-        >Tất cả</button>
-        <button 
-          className={filter === "pending" ? "active" : ""} 
+          data-filter="all"
+        >
+          Tất cả
+        </button>
+        <button
+          className={filter === "pending" ? "active" : ""}
           onClick={() => setFilter("pending")}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '8px',
-            border: 'none',
-            background: filter === "pending" ? '#f59e0b' : 'transparent',
-            color: filter === "pending" ? 'white' : '#64748b',
-            cursor: 'pointer',
-            fontWeight: '600',
-            transition: 'all 0.2s'
-          }}
-        >Chưa làm</button>
-        <button 
-          className={filter === "done" ? "active" : ""} 
+          data-filter="pending"
+        >
+          Chưa làm
+        </button>
+        <button
+          className={filter === "done" ? "active" : ""}
           onClick={() => setFilter("done")}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '8px',
-            border: 'none',
-            background: filter === "done" ? '#22c55e' : 'transparent',
-            color: filter === "done" ? 'white' : '#64748b',
-            cursor: 'pointer',
-            fontWeight: '600',
-            transition: 'all 0.2s'
-          }}
-        >Đã nộp</button>
-        <button 
-          className={filter === "overdue" ? "active" : ""} 
+          data-filter="done"
+        >
+          Đã nộp
+        </button>
+        <button
+          className={filter === "overdue" ? "active" : ""}
           onClick={() => setFilter("overdue")}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '8px',
-            border: 'none',
-            background: filter === "overdue" ? '#ef4444' : 'transparent',
-            color: filter === "overdue" ? 'white' : '#64748b',
-            cursor: 'pointer',
-            fontWeight: '600',
-            transition: 'all 0.2s'
-          }}
-        >Quá hạn</button>
+          data-filter="overdue"
+        >
+          Quá hạn
+        </button>
       </div>
 
       <div className="assignments-list">
@@ -359,11 +418,22 @@ const StudentAssignments = () => {
                 <div className="assignment-header">
                   <div className="assignment-title-section">
                     <h3 className="assignment-title">{assignment.title}</h3>
-                    <span className={`status-badge ${statusInfo.className}`}>
-                      {statusInfo.text}
-                    </span>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px', flexWrap: 'wrap' }}>
+                      <span className={`status-badge ${statusInfo.className}`}>
+                        {statusInfo.text}
+                      </span>
+                      {(assignment.isStrictMode || assignment.strictMode) && (
+                        <span className="strict-badge">
+                          <ShieldAlert size={12} /> THI NGHIÊM TÚC
+                        </span>
+                      )}
+                      {overdue && (
+                        <span className="overdue-badge">
+                          <AlertCircle size={12} /> Quá hạn
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  {overdue && <span className="overdue-badge"><AlertCircle size={14} /> Quá hạn</span>}
                 </div>
 
                 <p className="assignment-description">{assignment.description}</p>
@@ -386,7 +456,7 @@ const StudentAssignments = () => {
                       <span>Bài đã nộp ({new Date(submission.submittedAt).toLocaleString()})</span>
                     </div>
                     <div className="submission-content">{submission.content}</div>
-                    
+
                     {submission.status === "graded" && (
                       <div className="grade-section">
                         <div className="score-display">
@@ -408,7 +478,7 @@ const StudentAssignments = () => {
                 )}
 
                 {statusInfo.status === "pending" && !overdue && (
-                  <button 
+                  <button
                     className="submit-btn"
                     onClick={() => openSubmitModal(assignment)}
                     disabled={submitting[assignment.id]}
@@ -424,105 +494,54 @@ const StudentAssignments = () => {
       </div>
 
       {showSubmitModal && selectedAssignment && (
-        <div className="modal-overlay">
-          <div className="modal submit-modal">
-            <div className="modal-header">
-              <h2>Nộp bài: {selectedAssignment.title}</h2>
-              <button className="close-btn" onClick={() => setShowSubmitModal(false)}>×</button>
+        <div className={(selectedAssignment.isStrictMode || selectedAssignment.strictMode) ? "" : "modal-overlay"}>
+          {(selectedAssignment.isStrictMode || selectedAssignment.strictMode) ||
+            selectedAssignment.title?.toLowerCase().includes('test') ||
+            selectedAssignment.title?.toLowerCase().includes('thi') ||
+            selectedAssignment.title?.toLowerCase().includes('thy') ? (
+            <SeriousExamContainer
+              title={selectedAssignment.title}
+              assignmentId={selectedAssignment.id}
+              userId={studentId}
+              onClose={() => setShowSubmitModal(false)}
+              onAutoSubmit={handleSubmit}
+              strictMode={true}
+              isSubmitting={submitting[selectedAssignment.id]}
+            >
+              <div className="serious-modal-body">
+                {renderModalBody()}
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="submit-confirm-btn"
+                  onClick={handleSubmit}
+                  disabled={isSubmitDisabled()}
+                >
+                  <Send size={18} /> Hoàn thành & Nộp bài
+                </button>
+              </div>
+            </SeriousExamContainer>
+          ) : (
+            <div className="modal submit-modal">
+              <div className="modal-header">
+                <h2>Nộp bài: {selectedAssignment.title}</h2>
+                <button className="close-btn" onClick={() => setShowSubmitModal(false)}>×</button>
+              </div>
+              <div className="modal-body">
+                {renderModalBody()}
+              </div>
+              <div className="modal-footer">
+                <button className="cancel-btn" onClick={() => setShowSubmitModal(false)}>Hủy</button>
+                <button
+                  className="submit-confirm-btn"
+                  onClick={handleSubmit}
+                  disabled={isSubmitDisabled()}
+                >
+                  <Send size={18} /> Nộp bài
+                </button>
+              </div>
             </div>
-            <div className="modal-body">
-              {/* QUIZ Type */}
-              {selectedAssignment.type === 'QUIZ' && selectedAssignment.questions && (
-                <div className="quiz-section">
-                  <p className="quiz-instruction">Trả lời các câu hỏi bên dưới:</p>
-                  {selectedAssignment.questions.map((question, qIndex) => (
-                    <div key={qIndex} className="quiz-question">
-                      <p className="question-text">
-                        <span className="q-number">Câu {qIndex + 1} ({question.points || 1}đ):</span> {question.content}
-                      </p>
-                      <div className="options-list">
-                        {question.options.map((option, oIndex) => {
-                          const optionId = `asgn-${selectedAssignment.id}-q-${qIndex}-o-${oIndex}`;
-                          const isSelected = (quizAnswers[qIndex] || []).includes(oIndex);
-                          
-                          return (
-                            <label key={oIndex} htmlFor={optionId} className={`option-label ${isSelected ? 'selected' : ''}`}>
-                              <input
-                                id={optionId}
-                                type={question.type === 'MULTIPLE_CHOICE' ? 'checkbox' : 'radio'}
-                                name={`question_${qIndex}`}
-                                checked={isSelected}
-                                onChange={() => handleQuizAnswer(qIndex, oIndex, question.type === 'MULTIPLE_CHOICE')}
-                              />
-                              <span className="option-text">{option.content}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* UPLOAD Type */}
-              {selectedAssignment.type === 'UPLOAD' && (
-                <div className="upload-section">
-                  <div className="upload-area" onClick={() => document.getElementById(`file-upload-${selectedAssignment.id}`).click()} style={{ cursor: 'pointer' }}>
-                    <input
-                      id={`file-upload-${selectedAssignment.id}`}
-                      type="file"
-                      multiple
-                      onChange={handleFileUpload}
-                      style={{ display: 'none' }}
-                    />
-                    <div className="upload-placeholder">
-                      <Upload size={32} />
-                      <p>Click để chọn file hoặc kéo thả file vào đây</p>
-                    </div>
-                  </div>
-                  {uploadedFiles.length > 0 && (
-                    <div className="uploaded-files">
-                      <p>Files đã chọn:</p>
-                      {uploadedFiles.map((file, index) => (
-                        <div key={index} className="file-item">
-                          <FileUp size={16} />
-                          <span>{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
-                          <button onClick={() => removeUploadedFile(index)}>×</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ESSAY Type (default) */}
-              {(!selectedAssignment.type || selectedAssignment.type === 'ESSAY') && (
-                <div className="form-group">
-                  <label>Nội dung bài làm</label>
-                  <textarea
-                    value={submitContent}
-                    onChange={(e) => setSubmitContent(e.target.value)}
-                    placeholder="Nhập câu trả lời hoặc nội dung bài làm của bạn..."
-                    rows={10}
-                  />
-                </div>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button className="cancel-btn" onClick={() => setShowSubmitModal(false)}>Hủy</button>
-              <button 
-                className="submit-confirm-btn" 
-                onClick={handleSubmit}
-                disabled={
-                  (selectedAssignment.type === 'QUIZ' && Object.keys(quizAnswers).length === 0) ||
-                  (selectedAssignment.type === 'UPLOAD' && uploadedFiles.length === 0) ||
-                  ((!selectedAssignment.type || selectedAssignment.type === 'ESSAY') && !submitContent.trim())
-                }
-              >
-                <Send size={16} /> Nộp bài
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>

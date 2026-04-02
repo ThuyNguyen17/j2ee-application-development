@@ -21,6 +21,8 @@ public class Assignment {
     private List<ClassInfo> classes;
     private Integer submittedCount;
     private Integer totalCount;
+    private boolean isStrictMode;
+    
     
     // Assignment type: ESSAY, QUIZ, UPLOAD
     private String type;
